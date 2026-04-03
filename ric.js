@@ -17,7 +17,7 @@
         vac=gv('vacancy'),taxes=gv('taxes'),ins=gv('ins'),maint=gv('maint'),
         hoa=gv('hoa'),mgmt=gv('mgmt'),term=gv('term')||30;
 
-    set('dpct',price>0?(down/price*100).toFixed(1)+'% of purchase price':'');
+    
     set('th','≈ '+fm(taxes/12)+'/mo');
     set('ih','≈ '+fm(ins/12)+'/mo');
     set('mh','≈ '+fm(maint/12)+'/mo');
@@ -25,20 +25,20 @@
     var loan=Math.max(price-down,0),mr=rate/100/12,np=term*12,mpi=0;
     if(mr>0&&loan>0)mpi=loan*(mr*Math.pow(1+mr,np))/(Math.pow(1+mr,np)-1);
 
-    var effRent=rent*(1-vac/100),mgmtFee=effRent*mgmt/100;
+    var effRent=rent*(1-vac/100),mgmtFee=mgmt;
     var totalExp=mpi+taxes/12+ins/12+maint/12+hoa+mgmtFee;
     var mcf=effRent-totalExp,coc=down>0?(mcf*12/down)*100:0;
 
     var e3=eqAt(3,loan,mr,mpi,price,appr);
     var e5=eqAt(5,loan,mr,mpi,price,appr);
-    var e10=eqAt(10,loan,mr,mpi,price,appr);
+    var e7=eqAt(7,loan,mr,mpi,price,appr);
     function cagr(e,yr){return down>0&&e.eq>0?(Math.pow(e.eq/down,1/yr)-1)*100:0;}
 
     set('m1v',fms(mcf),mcf>=0?'#2ecc71':'#e74c3c');
     set('m1s',pc(coc)+' CoC');
     set('m2v',fm(e3.eq));set('m2s',pc(cagr(e3,3))+' CAGR');
     set('m3v',fm(e5.eq));set('m3s',pc(cagr(e5,5))+' CAGR');
-    set('m4v',fm(e10.eq));set('m4s',pc(cagr(e10,10))+' CAGR');
+    set('m4v',fm(e7.eq));set('m4s',pc(cagr(e7,7))+' CAGR');
 
     set('psub',' ('+appr.toFixed(2)+'% appreciation)');
     set('p3',fm(price*Math.pow(1+appr/100,3)));
