@@ -40,12 +40,12 @@
     set('m3v',fm(e5.eq));set('m3s',pc(cagr(e5,5))+' CAGR');
     set('m4v',fm(e7.eq));set('m4s',pc(cagr(e7,7))+' CAGR');
 
-    set('psub',' ('+appr.toFixed(2)+'% appreciation)');
+    
     set('p3',fm(price*Math.pow(1+appr/100,3)));
     set('p5',fm(price*Math.pow(1+appr/100,5)));
     set('p7',fm(price*Math.pow(1+appr/100,7)));
 
-    set('b1',fm(effRent));set('b1h',vac+'% vacancy applied');
+    set('b1',fm(effRent));
     set('b2',fm(mpi));set('b3',fm(taxes/12+ins/12));
     set('b4',fm(maint/12));set('b5',fm(hoa+mgmtFee));set('b6',fm(totalExp));
   }
