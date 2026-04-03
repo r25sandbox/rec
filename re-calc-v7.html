@@ -31,11 +31,9 @@
   <font color="#ffffff" style="font-size:11px;font-weight:700;letter-spacing:.08em">PROPERTY VALUE PROJECTION</font>
   <font id="psub" color="#7a9bbf" style="font-size:10px"></font>
   <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px"><tr>
-    <td style="text-align:center"><font color="#7a9bbf" style="font-size:10px">2-YR</font><br><font id="p2" color="#ffffff" style="font-size:14px;font-weight:700">$0</font></td>
-    <td style="text-align:center"><font color="#7a9bbf" style="font-size:10px">4-YR</font><br><font id="p4" color="#ffffff" style="font-size:14px;font-weight:700">$0</font></td>
-    <td style="text-align:center"><font color="#7a9bbf" style="font-size:10px">6-YR</font><br><font id="p6" color="#ffffff" style="font-size:14px;font-weight:700">$0</font></td>
-    <td style="text-align:center"><font color="#7a9bbf" style="font-size:10px">8-YR</font><br><font id="p8" color="#ffffff" style="font-size:14px;font-weight:700">$0</font></td>
-    <td style="text-align:center"><font color="#7a9bbf" style="font-size:10px">10-YR</font><br><font id="p10" color="#ffffff" style="font-size:14px;font-weight:700">$0</font></td>
+    <td style="text-align:center"><font color="#7a9bbf" style="font-size:10px">3-YR</font><br><font id="p3" color="#ffffff" style="font-size:16px;font-weight:700">$0</font></td>
+    <td style="text-align:center"><font color="#7a9bbf" style="font-size:10px">5-YR</font><br><font id="p5" color="#ffffff" style="font-size:16px;font-weight:700">$0</font></td>
+    <td style="text-align:center"><font color="#7a9bbf" style="font-size:10px">7-YR</font><br><font id="p7" color="#ffffff" style="font-size:16px;font-weight:700">$0</font></td>
   </tr></table>
 </div>
  
@@ -162,11 +160,9 @@
     set('m4v',fm(e10.eq));set('m4s',pc(cagr(e10,10))+' CAGR');
  
     set('psub',' ('+appr.toFixed(2)+'% appreciation)');
-    set('p2',fm(price*Math.pow(1+appr/100,2)));
-    set('p4',fm(price*Math.pow(1+appr/100,4)));
-    set('p6',fm(price*Math.pow(1+appr/100,6)));
-    set('p8',fm(price*Math.pow(1+appr/100,8)));
-    set('p10',fm(price*Math.pow(1+appr/100,10)));
+    set('p3',fm(price*Math.pow(1+appr/100,3)));
+    set('p5',fm(price*Math.pow(1+appr/100,5)));
+    set('p7',fm(price*Math.pow(1+appr/100,7)));
  
     set('b1',fm(effRent));set('b1h',vac+'% vacancy applied');
     set('b2',fm(mpi));set('b3',fm(taxes/12+ins/12));
