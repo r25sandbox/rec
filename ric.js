@@ -69,4 +69,5 @@
     var el=gi(ids[i]);
     if(el)el.addEventListener('input',run);
   }
+  var lt=gi('loantype');if(lt)lt.addEventListener('change',run);
 })();
