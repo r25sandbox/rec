@@ -74,6 +74,8 @@
     var s='width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box';
     var els=document.getElementsByClassName('ri');
     for(var i=0;i<els.length;i++){els[i].setAttribute('style',s);}
+    var dpct=gi('dpct');
+    if(dpct)dpct.setAttribute('style','font-size:9px;opacity:0.75;');
   }
 
   function init(){
