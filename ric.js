@@ -1,4 +1,8 @@
 // ric.js — REI Calc external script
+// v2.2  2026-04-11  Restored loan type dropdown (30yr fixed vs interest only);
+//                   loantype change listener added; term input removed;
+//                   cash flow panel one-line layout support
+//                   // Commit: restore loantype dropdown + IO calc logic
 // v2.1  2026-04-11  applyInputStyles(): styles all class="ri" inputs so HTML embed stays
 //                   under Carrd's ~10k char Code embed limit
 //                   // Commit: move input styles to JS to shrink embed
@@ -26,32 +30,40 @@
     });
   }
 
-  function eqAt(yr,loan,mr,mpi,price,appr){
+  function eqAt(yr,loan,mr,mpi,price,appr,io){
     var pv=price*Math.pow(1+appr/100,yr),bal=loan;
-    for(var m=0;m<yr*12;m++){var i=bal*mr;bal=Math.max(0,bal-(mpi-i));}
+    if(!io){
+      for(var m=0;m<yr*12;m++){var i=bal*mr;bal=Math.max(0,bal-(mpi-i));}
+    }
     return{pv:pv,eq:pv-bal};
   }
 
   function run(){
     var price=gv('price'),down=gv('down'),rent=gv('rent'),rate=gv('rate'),appr=gv('appr'),
         vac=gv('vacancy'),taxes=gv('taxes'),ins=gv('ins'),maint=gv('maint'),
-        hoa=gv('hoa'),mgmt=gv('mgmt'),term=gv('term')||30;
-    if(!price){price=500000;down=100000;rent=3000;rate=6.5;appr=5;vac=5;taxes=3000;ins=1200;maint=1200;hoa=150;mgmt=0;term=30;}
+        hoa=gv('hoa'),mgmt=gv('mgmt');
+    var ltEl=gi('loantype'),loantype=ltEl?ltEl.value:'30fixed';
+    if(!price){price=500000;down=100000;rent=3000;rate=6.5;appr=5;vac=5;taxes=3000;ins=1200;maint=1200;hoa=150;mgmt=0;}
 
     set('th','\u2248 '+fm(taxes/12)+'/mo');
     set('ih','\u2248 '+fm(ins/12)+'/mo');
     set('mh','\u2248 '+fm(maint/12)+'/mo');
 
-    var loan=Math.max(price-down,0),mr=rate/100/12,np=term*12,mpi=0;
-    if(mr>0&&loan>0)mpi=loan*(mr*Math.pow(1+mr,np))/(Math.pow(1+mr,np)-1);
+    var loan=Math.max(price-down,0),mr=rate/100/12,np=360,mpi=0;
+    var io=loantype==='30io';
+    if(io){
+      mpi=loan*mr;
+    } else {
+      if(mr>0&&loan>0)mpi=loan*(mr*Math.pow(1+mr,np))/(Math.pow(1+mr,np)-1);
+    }
 
     var effRent=rent*(1-vac/100),mgmtFee=effRent*mgmt/100;
     var totalExp=mpi+taxes/12+ins/12+maint/12+hoa+mgmtFee;
     var mcf=effRent-totalExp,coc=down>0?(mcf*12/down)*100:0;
 
-    var e3=eqAt(3,loan,mr,mpi,price,appr);
-    var e5=eqAt(5,loan,mr,mpi,price,appr);
-    var e7=eqAt(7,loan,mr,mpi,price,appr);
+    var e3=eqAt(3,loan,mr,mpi,price,appr,io);
+    var e5=eqAt(5,loan,mr,mpi,price,appr,io);
+    var e7=eqAt(7,loan,mr,mpi,price,appr,io);
     function cagr(e,yr){return down>0&&e.eq>0?(Math.pow(e.eq/down,1/yr)-1)*100:0;}
 
     set('m1v',fms(mcf),mcf>=0?'#2ecc71':'#e74c3c');
@@ -80,10 +92,11 @@
     initToggle('hdr-eq','body-eq','arr-eq');
     initToggle('hdr-mo','body-mo','arr-mo');
     run();
-    var ids=['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt','term'];
+    var ids=['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt'];
     for(var i=0;i<ids.length;i++){
       var el=gi(ids[i]);if(el)el.addEventListener('input',run);
     }
+    var lt=gi('loantype');if(lt)lt.addEventListener('change',run);
   }
 
   if(document.readyState==='loading'){
