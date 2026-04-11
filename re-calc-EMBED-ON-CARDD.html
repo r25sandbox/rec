@@ -1,0 +1,232 @@
+<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;width:100%;padding:16px 12px;background:#0d1b2e;border-radius:12px;box-sizing:border-box">
+  <!-- PANEL 1: Cash Flow — full width, always visible -->
+  <div style="background:#162236;border-radius:10px;padding:18px 16px;text-align:center;margin-bottom:12px">
+    <font color="#7a9bbf" style="font-size:10px;font-weight:700;letter-spacing:.06em">CASH FLOW</font><br>
+    <font id="m1v" color="#2ecc71" style="font-size:22px;font-weight:700;line-height:1.5">$0</font><br>
+    <font id="m1s" color="#7a9bbf" style="font-size:11px">0% CoC</font>
+  </div>
+  <!-- PANEL 2: Equity + Value Projection — collapsible, default collapsed -->
+  <div style="background:#162236;border-radius:10px;margin-bottom:12px;overflow:hidden">
+    <div id="hdr-eq" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+      <font color="#ffffff" style="font-size:11px;font-weight:700;letter-spacing:.08em">EQUITY &amp; VALUE PROJECTION</font>
+      <font id="arr-eq" color="#7a9bbf" style="font-size:13px;line-height:1">&#9658;</font>
+    </div>
+    <div id="body-eq" style="display:none;padding:0 16px 16px">
+      <font color="#7a9bbf" style="font-size:10px;font-weight:600;letter-spacing:.06em">EQUITY</font>
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;margin-bottom:14px"><tr>
+        <td style="text-align:center;vertical-align:top">
+          <font color="#7a9bbf" style="font-size:10px">3-YR</font><br>
+          <font id="m2v" color="#2ecc71" style="font-size:15px;font-weight:700">$0</font><br>
+          <font id="m2s" color="#7a9bbf" style="font-size:10px">0% CAGR</font>
+        </td>
+        <td style="text-align:center;vertical-align:top">
+          <font color="#7a9bbf" style="font-size:10px">5-YR</font><br>
+          <font id="m3v" color="#2ecc71" style="font-size:15px;font-weight:700">$0</font><br>
+          <font id="m3s" color="#7a9bbf" style="font-size:10px">0% CAGR</font>
+        </td>
+        <td style="text-align:center;vertical-align:top">
+          <font color="#7a9bbf" style="font-size:10px">7-YR</font><br>
+          <font id="m4v" color="#2ecc71" style="font-size:15px;font-weight:700">$0</font><br>
+          <font id="m4s" color="#7a9bbf" style="font-size:10px">0% CAGR</font>
+        </td>
+      </tr></table>
+      <div style="border-top:1px solid #1e3a5f;margin-bottom:12px"></div>
+      <font color="#7a9bbf" style="font-size:10px;font-weight:600;letter-spacing:.06em">PROPERTY VALUE</font>
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px"><tr>
+        <td style="text-align:center">
+          <font color="#7a9bbf" style="font-size:10px">3-YR</font><br>
+          <font id="p3" color="#ffffff" style="font-size:15px;font-weight:700">$0</font>
+        </td>
+        <td style="text-align:center">
+          <font color="#7a9bbf" style="font-size:10px">5-YR</font><br>
+          <font id="p5" color="#ffffff" style="font-size:15px;font-weight:700">$0</font>
+        </td>
+        <td style="text-align:center">
+          <font color="#7a9bbf" style="font-size:10px">7-YR</font><br>
+          <font id="p7" color="#ffffff" style="font-size:15px;font-weight:700">$0</font>
+        </td>
+      </tr></table>
+    </div>
+  </div>
+  <!-- PANEL 3: Monthly Payment — collapsible, default collapsed -->
+  <div style="background:#162236;border-radius:10px;margin-bottom:12px;overflow:hidden">
+    <div id="hdr-mo" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+      <font color="#ffffff" style="font-size:11px;font-weight:700;letter-spacing:.08em">MONTHLY PAYMENT</font>
+      <font id="arr-mo" color="#7a9bbf" style="font-size:13px;line-height:1">&#9658;</font>
+    </div>
+    <div id="body-mo" style="display:none;padding:0 16px 16px">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td width="33%" style="padding-bottom:12px;vertical-align:top">
+            <font color="#7a9bbf" style="font-size:10px;font-weight:600">EFFECTIVE RENT</font><br>
+            <font id="b1" color="#ffffff" style="font-size:15px;font-weight:700">$0</font><br>
+            <font id="b1h" color="#7a9bbf" style="font-size:10px">5% vacancy applied</font>
+          </td>
+          <td width="33%" style="padding-bottom:12px;vertical-align:top">
+            <font color="#7a9bbf" style="font-size:10px;font-weight:600">MORTGAGE (P&amp;I)</font><br>
+            <font id="b2" color="#ffffff" style="font-size:15px;font-weight:700">$0</font>
+          </td>
+          <td width="33%" style="padding-bottom:12px;vertical-align:top">
+            <font color="#7a9bbf" style="font-size:10px;font-weight:600">TAX + INSURANCE</font><br>
+            <font id="b3" color="#ffffff" style="font-size:15px;font-weight:700">$0</font><br>
+            <font color="#7a9bbf" style="font-size:10px">monthly</font>
+          </td>
+        </tr>
+        <tr>
+          <td style="vertical-align:top">
+            <font color="#7a9bbf" style="font-size:10px;font-weight:600">MAINTENANCE</font><br>
+            <font id="b4" color="#ffffff" style="font-size:15px;font-weight:700">$0</font><br>
+            <font color="#7a9bbf" style="font-size:10px">monthly</font>
+          </td>
+          <td style="vertical-align:top">
+            <font color="#7a9bbf" style="font-size:10px;font-weight:600">HOA + MGMT</font><br>
+            <font id="b5" color="#ffffff" style="font-size:15px;font-weight:700">$0</font><br>
+            <font color="#7a9bbf" style="font-size:10px">monthly</font>
+          </td>
+          <td style="vertical-align:top">
+            <font color="#7a9bbf" style="font-size:10px;font-weight:600">TOTAL EXPENSES</font><br>
+            <font id="b6" color="#e74c3c" style="font-size:15px;font-weight:700">$0</font><br>
+            <font color="#7a9bbf" style="font-size:10px">monthly</font>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  <!-- PANEL 4: Property Details — always visible -->
+  <div style="background:#162236;border-radius:10px;padding:16px;margin-bottom:12px">
+    <font color="#ffffff" style="font-size:11px;font-weight:700;letter-spacing:.08em">PROPERTY DETAILS</font>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px">
+      <tr>
+        <td width="33%" style="padding:0 6px 12px 0;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Purchase price ($)</font><br><input type="number" id="price" value="500000" step="1000" class="ri"></td>
+        <td width="33%" style="padding:0 6px 12px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Down payment ($)</font><br><input type="number" id="down" value="100000" step="1000" class="ri"><br><font id="dpct" color="#7a9bbf" style="font-size:10px">20.0% of purchase price</font></td>
+        <td width="33%" style="padding:0 0 12px 6px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Monthly rent ($)</font><br><input type="number" id="rent" value="3000" step="50" class="ri"></td>
+      </tr>
+      <tr>
+        <td style="padding:0 6px 12px 0;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Interest rate (%)</font><br><input type="number" id="rate" value="6.50" step="0.05" class="ri"></td>
+        <td style="padding:0 6px 12px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Appreciation rate (%)</font><br><input type="number" id="appr" value="5.00" step="0.25" class="ri"></td>
+        <td style="padding:0 0 12px 6px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Vacancy rate (%)</font><br><input type="number" id="vacancy" value="5" step="1" class="ri"></td>
+      </tr>
+      <tr>
+        <td style="padding:0 6px 12px 0;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Annual taxes ($)</font><br><input type="number" id="taxes" value="3000" step="100" class="ri"><br><font id="th" color="#7a9bbf" style="font-size:10px">&#8776; $250/mo</font></td>
+        <td style="padding:0 6px 12px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Annual insurance ($)</font><br><input type="number" id="ins" value="1200" step="100" class="ri"><br><font id="ih" color="#7a9bbf" style="font-size:10px">&#8776; $100/mo</font></td>
+        <td style="padding:0 0 12px 6px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Annual maintenance ($)</font><br><input type="number" id="maint" value="1200" step="100" class="ri"><br><font id="mh" color="#7a9bbf" style="font-size:10px">&#8776; $100/mo</font></td>
+      </tr>
+      <tr>
+        <td style="padding:0 6px 0 0;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Monthly HOA ($)</font><br><input type="number" id="hoa" value="150" step="10" class="ri"></td>
+        <td style="padding:0 6px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Mgmt fee (%)</font><br><input type="number" id="mgmt" value="0" step="0.5" class="ri"></td>
+        <td style="padding:0 0 0 6px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Loan term (years)</font><br><input type="number" id="term" value="30" step="5" class="ri"></td>
+      </tr>
+    </table>
+  </div>
+  <!-- Footnotes -->
+  <div style="padding:0 4px 10px">
+    <font color="#7a9bbf" style="font-size:11px;line-height:2">
+      * Cash flow = effective rent &#8722; all expenses<br>
+      * Equity = property value &#8722; remaining loan balance<br>
+      * CoC = annual cash flow &#247; down payment<br>
+      * CAGR = compound annual growth rate of equity
+    </font>
+  </div>
+  <div style="border-top:1px solid #1e3a5f;padding-top:12px">
+    <font color="#4a6a8a" style="font-size:10px;line-height:1.7">This calculator is for informational and educational purposes only. Results are estimates based on inputs provided and do not constitute financial, investment, or legal advice. Market conditions, tax implications, and individual circumstances vary. Do your own research (DYOR) and consult a qualified professional before making any investment decisions.</font>
+  </div>
+</div>
+<script src="https://r25sandbox.github.io/rec/ric.js"></script>  <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px">
+    <tr>
+      <td width="33%" style="padding:0 6px 12px 0;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Purchase price ($)</font><br><input type="number" id="price" value="500000" step="1000" style="width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box"></td>
+      <td width="33%" style="padding:0 6px 12px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Down payment ($)</font><br><input type="number" id="down" value="100000" step="1000" style="width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box"><br><font id="dpct" color="#7a9bbf" style="font-size:10px">20.0% of purchase price</font></td>
+      <td width="33%" style="padding:0 0 12px 6px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Monthly rent ($)</font><br><input type="number" id="rent" value="3000" step="50" style="width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box"></td>
+    </tr>
+    <tr>
+      <td style="padding:0 6px 12px 0;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Interest rate (%)</font><br><input type="number" id="rate" value="6.50" step="0.05" style="width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box"></td>
+      <td style="padding:0 6px 12px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Appreciation rate (%)</font><br><input type="number" id="appr" value="5.00" step="0.25" style="width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box"></td>
+      <td style="padding:0 0 12px 6px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Vacancy rate (%)</font><br><input type="number" id="vacancy" value="5" step="1" style="width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box"></td>
+    </tr>
+    <tr>
+      <td style="padding:0 6px 12px 0;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Annual taxes ($)</font><br><input type="number" id="taxes" value="3000" step="100" style="width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box"><br><font id="th" color="#7a9bbf" style="font-size:10px">≈ $250/mo</font></td>
+      <td style="padding:0 6px 12px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Annual insurance ($)</font><br><input type="number" id="ins" value="1200" step="100" style="width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box"><br><font id="ih" color="#7a9bbf" style="font-size:10px">≈ $100/mo</font></td>
+      <td style="padding:0 0 12px 6px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Annual maintenance ($)</font><br><input type="number" id="maint" value="1200" step="100" style="width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box"><br><font id="mh" color="#7a9bbf" style="font-size:10px">≈ $100/mo</font></td>
+    </tr>
+    <tr>
+      <td style="padding:0 6px 0 0;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Monthly HOA ($)</font><br><input type="number" id="hoa" value="150" step="10" style="width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box"></td>
+      <td style="padding:0 6px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Mgmt fee (%)</font><br><input type="number" id="mgmt" value="0" step="0.5" style="width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box"></td>
+      <td style="padding:0 0 0 6px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Loan term (years)</font><br><input type="number" id="term" value="30" step="5" style="width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box"></td>
+    </tr>
+  </table>
+</div>
+ 
+<div style="padding:0 4px 10px">
+  <font color="#7a9bbf" style="font-size:11px;line-height:2">
+    * Cash flow = effective rent − all expenses<br>
+    * Equity = property value − remaining loan balance<br>
+    * CoC = annual cash flow ÷ down payment<br>
+    * CAGR = compound annual growth rate of equity
+  </font>
+</div>
+<div style="border-top:1px solid #1e3a5f;padding-top:12px">
+  <font color="#4a6a8a" style="font-size:10px;line-height:1.7">This calculator is for informational and educational purposes only. Results are estimates based on inputs provided and do not constitute financial, investment, or legal advice. Market conditions, tax implications, and individual circumstances vary. Do your own research (DYOR) and consult a qualified professional before making any investment decisions.</font>
+</div>
+ 
+</div>
+ 
+<script>
+(function(){
+  function gi(id){return document.getElementById(id);}
+  function gv(id){var el=gi(id);return el?parseFloat(el.value)||0:0;}
+  function fm(n){return '$'+Math.round(Math.abs(n)).toLocaleString();}
+  function fms(n){return(n<0?'-':'')+fm(n);}
+  function pc(n){return n.toFixed(2)+'%';}
+  function set(id,txt,col){var el=gi(id);if(!el)return;el.textContent=txt;if(col)el.color=col;}
+ 
+  function eqAt(yr,loan,mr,mpi,price,appr){
+    var pv=price*Math.pow(1+appr/100,yr),bal=loan;
+    for(var m=0;m<yr*12;m++){var i=bal*mr;bal=Math.max(0,bal-(mpi-i));}
+    return{pv:pv,eq:pv-bal};
+  }
+ 
+  function run(){
+    var price=gv('price'),down=gv('down'),rent=gv('rent'),rate=gv('rate'),appr=gv('appr'),
+        vac=gv('vacancy'),taxes=gv('taxes'),ins=gv('ins'),maint=gv('maint'),
+        hoa=gv('hoa'),mgmt=gv('mgmt'),term=gv('term')||30;
+ 
+    set('dpct',price>0?(down/price*100).toFixed(1)+'% of purchase price':'');
+    set('th','≈ '+fm(taxes/12)+'/mo');
+    set('ih','≈ '+fm(ins/12)+'/mo');
+    set('mh','≈ '+fm(maint/12)+'/mo');
+ 
+    var loan=Math.max(price-down,0),mr=rate/100/12,np=term*12,mpi=0;
+    if(mr>0&&loan>0)mpi=loan*(mr*Math.pow(1+mr,np))/(Math.pow(1+mr,np)-1);
+ 
+    var effRent=rent*(1-vac/100),mgmtFee=effRent*mgmt/100;
+    var totalExp=mpi+taxes/12+ins/12+maint/12+hoa+mgmtFee;
+    var mcf=effRent-totalExp,coc=down>0?(mcf*12/down)*100:0;
+ 
+    var e3=eqAt(3,loan,mr,mpi,price,appr);
+    var e5=eqAt(5,loan,mr,mpi,price,appr);
+    var e10=eqAt(10,loan,mr,mpi,price,appr);
+    function cagr(e,yr){return down>0&&e.eq>0?(Math.pow(e.eq/down,1/yr)-1)*100:0;}
+ 
+    set('m1v',fms(mcf),mcf>=0?'#2ecc71':'#e74c3c');
+    set('m1s',pc(coc)+' CoC');
+    set('m2v',fm(e3.eq));set('m2s',pc(cagr(e3,3))+' CAGR');
+    set('m3v',fm(e5.eq));set('m3s',pc(cagr(e5,5))+' CAGR');
+    set('m4v',fm(e10.eq));set('m4s',pc(cagr(e10,10))+' CAGR');
+ 
+    set('psub',' ('+appr.toFixed(2)+'% appreciation)');
+    set('p3',fm(price*Math.pow(1+appr/100,3)));
+    set('p5',fm(price*Math.pow(1+appr/100,5)));
+    set('p7',fm(price*Math.pow(1+appr/100,7)));
+ 
+    set('b1',fm(effRent));set('b1h',vac+'% vacancy applied');
+    set('b2',fm(mpi));set('b3',fm(taxes/12+ins/12));
+    set('b4',fm(maint/12));set('b5',fm(hoa+mgmtFee));set('b6',fm(totalExp));
+  }
+ 
+  run();
+  var ids=['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt','term'];
+  for(var i=0;i<ids.length;i++){
+    var el=gi(ids[i]);
+    if(el)el.addEventListener('input',run);
+  }
+})();
+</script>
