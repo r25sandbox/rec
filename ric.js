@@ -38,7 +38,6 @@
         hoa=gv('hoa'),mgmt=gv('mgmt'),term=gv('term')||30;
     if(!price){price=500000;down=100000;rent=3000;rate=6.5;appr=5;vac=5;taxes=3000;ins=1200;maint=1200;hoa=150;mgmt=0;term=30;}
 
-    set('dpct',price>0?(down/price*100).toFixed(0)+'%':'');
     set('th','\u2248 '+fm(taxes/12)+'/mo');
     set('ih','\u2248 '+fm(ins/12)+'/mo');
     set('mh','\u2248 '+fm(maint/12)+'/mo');
@@ -74,8 +73,6 @@
     var s='width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box';
     var els=document.getElementsByClassName('ri');
     for(var i=0;i<els.length;i++){els[i].setAttribute('style',s);}
-    var dpct=gi('dpct');
-    if(dpct)dpct.setAttribute('style','font-size:9px;opacity:0.75;');
   }
 
   function init(){
