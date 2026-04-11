@@ -38,7 +38,7 @@
         hoa=gv('hoa'),mgmt=gv('mgmt'),term=gv('term')||30;
     if(!price){price=500000;down=100000;rent=3000;rate=6.5;appr=5;vac=5;taxes=3000;ins=1200;maint=1200;hoa=150;mgmt=0;term=30;}
 
-    set('dpct',price>0?(down/price*100).toFixed(1)+'% of purchase price':'');
+    set('dpct',price>0?(down/price*100).toFixed(0)+'%':'');
     set('th','\u2248 '+fm(taxes/12)+'/mo');
     set('ih','\u2248 '+fm(ins/12)+'/mo');
     set('mh','\u2248 '+fm(maint/12)+'/mo');
