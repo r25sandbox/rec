@@ -230,8 +230,8 @@
         +'<div id="hdr-sv" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">'
         +'<font color="#ffffff" style="font-size:11px;font-weight:700;letter-spacing:.08em">SAVED CALCULATIONS</font>'
         +'<span style="display:flex;align-items:center;gap:8px">'
-        +'<span id="btn-save" style="font-size:11px;cursor:pointer;padding:3px 10px;background:#c5a050;color:#0d1b2e;border-radius:4px;font-weight:700">&#128190; Save</span>'
-        +'<span id="print-all-btn" style="font-size:11px;cursor:pointer;padding:3px 10px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-weight:600">&#128424; All</span>'
+        +'<span id="btn-save" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#c5a050;color:#0d1b2e;border-radius:4px;line-height:1" title="Save calc">&#128190;</span>'
+        +'<span id="print-all-btn" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;line-height:1" title="Print all">&#128424;</span>'
         +'<font id="arr-sv" color="#7a9bbf" style="font-size:13px">&#9658;</font>'
         +'</span></div>'
         +'<div id="body-sv" style="display:none;padding:0 16px 16px">'
@@ -265,6 +265,8 @@
     injectSavesUI();
     initToggle('hdr-eq','body-eq','arr-eq');
     initToggle('hdr-mo','body-mo','arr-mo');
+    // Fix scroll trap in Carrd sandbox embed
+    document.addEventListener('touchmove',function(e){e.stopPropagation();},{passive:true});
     run();
     var ids=['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt'];
     for(var i=0;i<ids.length;i++){
