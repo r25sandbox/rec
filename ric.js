@@ -1,5 +1,9 @@
 // ric.js — REI Calc external script
-// v2.9  2026-04-12  Cache bust: script src ?v=29 in HTML embed
+// v3.0  2026-04-12  Import/Export: download saves as .json, import merges (dedupes by id)
+//                   PDF branding: matches RentalComp style — navy header, Realty 25 AZ,
+//                   Alik Levin Broker, phone, website, structured input grid, branded footer
+//                   Export (⬆) + Import (⬇) icon buttons added to panel header
+//                   // Commit: import/export + branded PDF report
 //                   Scroll fix: touch-action:pan-y + overscroll-behavior on outer div;
 //                   touchmove stopPropagation in init() for Carrd sandbox scroll trap
 //                   Control buttons: icons only, text labels removed (💾 🖨)
@@ -213,42 +217,109 @@
       var s=items[i];
       var mcfCol=s.mcf>=0?'#1a7a45':'#b91c1c';
       var ltLabel=s.loantype==='30io'?'Interest Only':'30yr Fixed';
-      rows+='<div style="background:#fff;border:1px solid #ddd;border-radius:10px;padding:20px;margin-bottom:20px;page-break-inside:avoid">'
-        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #c5a050;padding-bottom:10px;margin-bottom:14px">'
-        +'<div><div style="font-size:16px;font-weight:700;color:#0d1b2e">'+escHtml(s.label)+'</div>'
-        +'<div style="font-size:11px;color:#666;margin-top:2px">Saved '+s.savedAt+' &middot; '+ltLabel+'</div></div>'
-        +'<div style="text-align:right"><div style="font-size:22px;font-weight:700;color:'+mcfCol+'">'+fms(s.mcf)+'/mo</div>'
-        +'<div style="font-size:11px;color:#666">'+pc(s.coc)+' Cash-on-Cash</div></div></div>'
+      rows+='<div style="background:#fff;border:1px solid #e0ddd8;border-radius:10px;overflow:hidden;margin-bottom:24px;page-break-inside:avoid">'
+        // Property header bar — navy bg
+        +'<div style="background:#0d1b2e;padding:14px 20px;display:flex;justify-content:space-between;align-items:flex-start">'
+        +'<div><div style="font-size:15px;font-weight:700;color:#fff">'+escHtml(s.label)+'</div>'
+        +'<div style="font-size:10px;color:rgba(232,201,106,0.75);margin-top:3px;letter-spacing:.04em">'+ltLabel+' &middot; Saved '+s.savedAt+'</div></div>'
+        +'<div style="text-align:right"><div style="font-size:24px;font-weight:700;color:'+mcfCol+'">'+fms(s.mcf)+'/mo</div>'
+        +'<div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px">'+pc(s.coc)+' Cash-on-Cash</div></div></div>'
+        // Inputs grid — light bg
+        +'<div style="padding:16px 20px;background:#f9f8f5">'
         +'<table style="width:100%;border-collapse:collapse;font-size:12px">'
-        +'<tr><td style="padding:4px 8px;color:#555;width:33%">Price</td><td style="padding:4px 8px;font-weight:600">'+fm(s.inp.price)+'</td>'
-        +'<td style="padding:4px 8px;color:#555">Down</td><td style="padding:4px 8px;font-weight:600">'+fm(s.inp.down)+'</td>'
-        +'<td style="padding:4px 8px;color:#555">Rent/mo</td><td style="padding:4px 8px;font-weight:600">'+fm(s.inp.rent)+'</td></tr>'
-        +'<tr><td style="padding:4px 8px;color:#555">Interest</td><td style="padding:4px 8px;font-weight:600">'+s.inp.rate+'%</td>'
-        +'<td style="padding:4px 8px;color:#555">Appr.</td><td style="padding:4px 8px;font-weight:600">'+s.inp.appr+'%</td>'
-        +'<td style="padding:4px 8px;color:#555">Vacancy</td><td style="padding:4px 8px;font-weight:600">'+s.inp.vac+'%</td></tr>'
-        +'<tr><td style="padding:4px 8px;color:#555">Taxes/yr</td><td style="padding:4px 8px;font-weight:600">'+fm(s.inp.taxes)+'</td>'
-        +'<td style="padding:4px 8px;color:#555">Insur./yr</td><td style="padding:4px 8px;font-weight:600">'+fm(s.inp.ins)+'</td>'
-        +'<td style="padding:4px 8px;color:#555">Maint./yr</td><td style="padding:4px 8px;font-weight:600">'+fm(s.inp.maint)+'</td></tr>'
-        +'<tr><td style="padding:4px 8px;color:#555">HOA/mo</td><td style="padding:4px 8px;font-weight:600">'+fm(s.inp.hoa)+'</td>'
-        +'<td style="padding:4px 8px;color:#555">Mgmt</td><td style="padding:4px 8px;font-weight:600">'+s.inp.mgmt+'%</td>'
+        +'<tr style="border-bottom:1px solid #e8e5e0">'
+        +'<td style="padding:6px 8px;color:#888;width:16%">Price</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.price)+'</td>'
+        +'<td style="padding:6px 8px;color:#888">Down</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.down)+'</td>'
+        +'<td style="padding:6px 8px;color:#888">Rent/mo</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.rent)+'</td></tr>'
+        +'<tr style="border-bottom:1px solid #e8e5e0">'
+        +'<td style="padding:6px 8px;color:#888">Interest</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+s.inp.rate+'%</td>'
+        +'<td style="padding:6px 8px;color:#888">Appr.</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+s.inp.appr+'%</td>'
+        +'<td style="padding:6px 8px;color:#888">Vacancy</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+s.inp.vac+'%</td></tr>'
+        +'<tr>'
+        +'<td style="padding:6px 8px;color:#888">Taxes/yr</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.taxes)+'</td>'
+        +'<td style="padding:6px 8px;color:#888">Insur./yr</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.ins)+'</td>'
+        +'<td style="padding:6px 8px;color:#888">Maint./yr</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.maint)+'</td></tr>'
+        +'<tr>'
+        +'<td style="padding:6px 8px;color:#888">HOA/mo</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.hoa)+'</td>'
+        +'<td style="padding:6px 8px;color:#888">Mgmt</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+s.inp.mgmt+'%</td>'
         +'<td></td><td></td></tr>'
-        +'</table></div>';
+        +'</table></div></div>';
     }
-    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>REI Calc — Saved Properties</title>'
-      +'<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:800px;margin:0 auto;padding:20px;color:#0d1b2e}'
-      +'.hdr{text-align:center;border-bottom:3px solid #c5a050;padding-bottom:14px;margin-bottom:24px}'
-      +'.hdr h1{font-size:20px;color:#0d1b2e;margin:0}.hdr p{font-size:11px;color:#666;margin:4px 0 0}'
-      +'@media print{body{padding:0}}</style></head><body>'
-      +'<div class="hdr"><h1>REI Calculator — Property Comparison</h1><p>Realty 25 AZ &middot; '+new Date().toLocaleDateString()+'</p></div>'
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8">'
+      +'<title>REI Calc — Property Comparison</title>'
+      +'<style>'
+      +'*{box-sizing:border-box;margin:0;padding:0}'
+      +'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#fff;color:#0d1b2e;padding:32px;max-width:860px;margin:0 auto}'
+      +'.page-hdr{display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;margin-bottom:28px;border-bottom:3px solid #0d1b2e}'
+      +'.brand{font-size:20px;font-weight:700;color:#0d1b2e;letter-spacing:-.01em}'
+      +'.brand span{color:#c5a050}'
+      +'.brand-sub{font-size:10px;color:#888;margin-top:3px;letter-spacing:.04em}'
+      +'.page-date{font-size:11px;color:#888;text-align:right}'
+      +'.page-ftr{margin-top:28px;padding-top:14px;border-top:1px solid #ddd;display:flex;justify-content:space-between;align-items:center}'
+      +'.page-ftr span{font-size:9px;color:#aaa}'
+      +'@media print{body{padding:16px}@page{margin:14mm}}'
+      +'</style></head><body>'
+      +'<div class="page-hdr">'
+      +'<div><div class="brand">Realty <span>25 AZ</span></div>'
+      +'<div class="brand-sub">ALIK LEVIN, BROKER &middot; 480.920.2273 &middot; REALTY25AZ.COM</div></div>'
+      +'<div class="page-date"><strong style="font-size:13px">REI Property Comparison</strong><br>'+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})+'</div>'
+      +'</div>'
       +rows
-      +'<p style="font-size:9px;color:#999;text-align:center;margin-top:20px">For informational purposes only. Not financial advice. Realty 25 AZ · realty25az.com</p>'
+      +'<div class="page-ftr">'
+      +'<span>Realty 25 AZ &middot; realty25az.com &middot; 480.920.2273</span>'
+      +'<span>For informational purposes only. Not financial or investment advice.</span>'
+      +'</div>'
       +'</body></html>';
     var blob=new Blob([html],{type:'text/html'});
     var url=URL.createObjectURL(blob);
     var w=window.open(url,'_blank');
     if(w){w.addEventListener('load',function(){w.print();});}
-    else{var a=document.createElement('a');a.href=url;a.download='REI-Report.html';document.body.appendChild(a);a.click();document.body.removeChild(a);}
+    else{var a=document.createElement('a');a.href=url;a.download='REI-Comparison.html';document.body.appendChild(a);a.click();document.body.removeChild(a);}
     setTimeout(function(){URL.revokeObjectURL(url);},60000);
+  }
+
+  // ── Import / Export ──
+  function doExport(){
+    var arr=loadSaves();
+    if(!arr.length){alert('No saved calculations to export.');return;}
+    var blob=new Blob([JSON.stringify(arr,null,2)],{type:'application/json'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;a.download='rei-calcs-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},10000);
+  }
+
+  function doImport(){
+    var input=document.createElement('input');
+    input.type='file';input.accept='.json,application/json';
+    input.addEventListener('change',function(){
+      var file=input.files[0];if(!file)return;
+      var reader=new FileReader();
+      reader.onload=function(e){
+        try{
+          var imported=JSON.parse(e.target.result);
+          if(!Array.isArray(imported))throw new Error('Invalid format');
+          var existing=loadSaves();
+          // Merge — skip duplicates by id
+          var existingIds=existing.map(function(s){return s.id;});
+          var merged=existing.slice();
+          var added=0;
+          for(var i=0;i<imported.length;i++){
+            if(existingIds.indexOf(imported[i].id)<0){merged.push(imported[i]);added++;}
+          }
+          writeSaves(merged);
+          renderSaves();
+          // open panel
+          var body=gi('body-sv'),arr2=gi('arr-sv');
+          if(body)body.style.display='block';
+          if(arr2)arr2.textContent='\u25BC';
+          alert('Imported '+added+' calculation'+(added!==1?'s':'')+'. '+( merged.length-added)+' duplicates skipped.');
+        }catch(err){alert('Import failed: '+err.message);}
+      };
+      reader.readAsText(file);
+    });
+    input.click();
   }
 
   function injectSavesUI(){
@@ -260,6 +331,8 @@
         +'<span style="display:flex;align-items:center;gap:8px">'
         +'<span id="btn-save" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#c5a050;color:#0d1b2e;border-radius:4px;line-height:1" title="Save calc">&#128190;</span>'
         +'<span id="print-all-btn" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;line-height:1" title="Print all">&#128424;</span>'
+        +'<span id="btn-export" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;line-height:1" title="Export to file">&#11014;</span>'
+        +'<span id="btn-import" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;line-height:1" title="Import from file">&#11015;</span>'
         +'<font id="arr-sv" color="#7a9bbf" style="font-size:13px">&#9658;</font>'
         +'</span></div>'
         +'<div id="body-sv" style="display:none;padding:0 16px 16px">'
@@ -268,6 +341,8 @@
       initToggle('hdr-sv','body-sv','arr-sv');
       gi('btn-save').addEventListener('click',function(e){e.stopPropagation();doSave();});
       gi('print-all-btn').addEventListener('click',function(e){e.stopPropagation();printReport(null);});
+      gi('btn-export').addEventListener('click',function(e){e.stopPropagation();doExport();});
+      gi('btn-import').addEventListener('click',function(e){e.stopPropagation();doImport();});
       gi('saves-list').addEventListener('click',function(e){
         var el=e.target.closest('[data-act]');
         if(!el)return;
