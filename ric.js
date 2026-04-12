@@ -224,32 +224,22 @@
   }
 
   function injectSavesUI(){
-    // Save button above equity panel
-    var anchor=gi('saves-anchor');
-    if(anchor){
-      anchor.innerHTML='<div style="text-align:right;margin-bottom:12px">'
-        +'<span id="btn-save" style="display:inline-block;padding:6px 14px;background:#c5a050;color:#0d1b2e;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.04em;cursor:pointer">&#128190; Save calc</span>'
-        +'</div>';
-      gi('btn-save').addEventListener('click',doSave);
-    }
-    // Saved panel above property details
     var panelAnchor=gi('saved-panel-anchor');
     if(panelAnchor){
       panelAnchor.innerHTML='<div style="background:#162236;border-radius:10px;margin-bottom:12px;overflow:hidden">'
         +'<div id="hdr-sv" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">'
         +'<font color="#ffffff" style="font-size:11px;font-weight:700;letter-spacing:.08em">SAVED CALCULATIONS</font>'
-        +'<span style="display:flex;align-items:center;gap:10px">'
-        +'<span id="print-all-btn" style="font-size:11px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-weight:600">&#128424; All</span>'
+        +'<span style="display:flex;align-items:center;gap:8px">'
+        +'<span id="btn-save" style="font-size:11px;cursor:pointer;padding:3px 10px;background:#c5a050;color:#0d1b2e;border-radius:4px;font-weight:700">&#128190; Save</span>'
+        +'<span id="print-all-btn" style="font-size:11px;cursor:pointer;padding:3px 10px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-weight:600">&#128424; All</span>'
         +'<font id="arr-sv" color="#7a9bbf" style="font-size:13px">&#9658;</font>'
         +'</span></div>'
         +'<div id="body-sv" style="display:none;padding:0 16px 16px">'
         +'<div id="saves-list"><font color="#7a9bbf" style="font-size:11px">No saved calculations yet.</font></div>'
         +'</div></div>';
       initToggle('hdr-sv','body-sv','arr-sv');
-      gi('print-all-btn').addEventListener('click',function(e){
-        e.stopPropagation();
-        printReport(null);
-      });
+      gi('btn-save').addEventListener('click',function(e){e.stopPropagation();doSave();});
+      gi('print-all-btn').addEventListener('click',function(e){e.stopPropagation();printReport(null);});
       gi('saves-list').addEventListener('click',function(e){
         var el=e.target.closest('[data-act]');
         if(!el)return;
