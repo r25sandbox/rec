@@ -1,9 +1,13 @@
 // ric.js — REI Calc external script
-// v3.0  2026-04-12  Import/Export: download saves as .json, import merges (dedupes by id)
-//                   PDF branding: matches RentalComp style — navy header, Realty 25 AZ,
-//                   Alik Levin Broker, phone, website, structured input grid, branded footer
-//                   Export (⬆) + Import (⬇) icon buttons added to panel header
-//                   // Commit: import/export + branded PDF report
+// v3.2  2026-04-12  PDF card: navy bar removed entirely; white card with gold left border;
+//                   label + cash flow in single header row; bright green/red on white
+//                   // Commit: PDF card - no navy, gold left border, bright cash flow colors
+// v3.1  2026-04-12  Import fix: persistent hidden file input
+//                   avoids programmatic .click() blocked by mobile browsers
+//                   PDF card: navy top bar for label only; cash flow on white with
+//                   bright green/red; inputs on cream — navy appears once only
+//                   // Commit: fix import on mobile, fix PDF card colors
+// v3.0  2026-04-12  Import/Export + branded PDF report
 //                   Scroll fix: touch-action:pan-y + overscroll-behavior on outer div;
 //                   touchmove stopPropagation in init() for Carrd sandbox scroll trap
 //                   Control buttons: icons only, text labels removed (💾 🖨)
@@ -217,15 +221,14 @@
       var s=items[i];
       var mcfCol=s.mcf>=0?'#1a7a45':'#b91c1c';
       var ltLabel=s.loantype==='30io'?'Interest Only':'30yr Fixed';
-      rows+='<div style="background:#fff;border:1px solid #e0ddd8;border-radius:10px;overflow:hidden;margin-bottom:24px;page-break-inside:avoid">'
-        // Property header bar — navy bg
-        +'<div style="background:#0d1b2e;padding:14px 20px;display:flex;justify-content:space-between;align-items:flex-start">'
-        +'<div><div style="font-size:15px;font-weight:700;color:#fff">'+escHtml(s.label)+'</div>'
-        +'<div style="font-size:10px;color:rgba(232,201,106,0.75);margin-top:3px;letter-spacing:.04em">'+ltLabel+' &middot; Saved '+s.savedAt+'</div></div>'
-        +'<div style="text-align:right"><div style="font-size:24px;font-weight:700;color:'+mcfCol+'">'+fms(s.mcf)+'/mo</div>'
-        +'<div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px">'+pc(s.coc)+' Cash-on-Cash</div></div></div>'
-        // Inputs grid — light bg
-        +'<div style="padding:16px 20px;background:#f9f8f5">'
+      rows+='<div style="background:#fff;border:1px solid #e0ddd8;border-left:4px solid #c5a050;border-radius:0 10px 10px 0;overflow:hidden;margin-bottom:24px;page-break-inside:avoid">'
+        +'<div style="padding:14px 20px;border-bottom:1px solid #e8e5e0;display:flex;justify-content:space-between;align-items:center">'
+        +'<div><div style="font-size:15px;font-weight:700;color:#0d1b2e">'+escHtml(s.label)+'</div>'
+        +'<div style="font-size:10px;color:#999;margin-top:2px;letter-spacing:.04em">'+ltLabel+' &middot; Saved '+s.savedAt+'</div></div>'
+        +'<div style="text-align:right"><div style="font-size:26px;font-weight:700;color:'+mcfCol+'">'+fms(s.mcf)+'/mo</div>'
+        +'<div style="font-size:10px;color:#888">'+pc(s.coc)+' Cash-on-Cash</div></div>'
+        +'</div>'
+        +'<div style="padding:14px 20px;background:#f9f8f5">'
         +'<table style="width:100%;border-collapse:collapse;font-size:12px">'
         +'<tr style="border-bottom:1px solid #e8e5e0">'
         +'<td style="padding:6px 8px;color:#888;width:16%">Price</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.price)+'</td>'
@@ -291,35 +294,33 @@
   }
 
   function doImport(){
-    var input=document.createElement('input');
-    input.type='file';input.accept='.json,application/json';
-    input.addEventListener('change',function(){
-      var file=input.files[0];if(!file)return;
-      var reader=new FileReader();
-      reader.onload=function(e){
-        try{
-          var imported=JSON.parse(e.target.result);
-          if(!Array.isArray(imported))throw new Error('Invalid format');
-          var existing=loadSaves();
-          // Merge — skip duplicates by id
-          var existingIds=existing.map(function(s){return s.id;});
-          var merged=existing.slice();
-          var added=0;
-          for(var i=0;i<imported.length;i++){
-            if(existingIds.indexOf(imported[i].id)<0){merged.push(imported[i]);added++;}
-          }
-          writeSaves(merged);
-          renderSaves();
-          // open panel
-          var body=gi('body-sv'),arr2=gi('arr-sv');
-          if(body)body.style.display='block';
-          if(arr2)arr2.textContent='\u25BC';
-          alert('Imported '+added+' calculation'+(added!==1?'s':'')+'. '+( merged.length-added)+' duplicates skipped.');
-        }catch(err){alert('Import failed: '+err.message);}
-      };
-      reader.readAsText(file);
-    });
-    input.click();
+    var input=gi('import-file-input');
+    if(input)input.click();
+  }
+
+  function handleImportFile(file){
+    if(!file)return;
+    var reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        var imported=JSON.parse(e.target.result);
+        if(!Array.isArray(imported))throw new Error('Invalid format');
+        var existing=loadSaves();
+        var existingIds=existing.map(function(s){return s.id;});
+        var merged=existing.slice();
+        var added=0;
+        for(var i=0;i<imported.length;i++){
+          if(existingIds.indexOf(imported[i].id)<0){merged.push(imported[i]);added++;}
+        }
+        writeSaves(merged);
+        renderSaves();
+        var body=gi('body-sv'),arr2=gi('arr-sv');
+        if(body)body.style.display='block';
+        if(arr2)arr2.textContent='\u25BC';
+        alert('Imported '+added+' calculation'+(added!==1?'s':'')+'. '+(merged.length-added)+' duplicate(s) skipped.');
+      }catch(err){alert('Import failed: '+err.message);}
+    };
+    reader.readAsText(file);
   }
 
   function injectSavesUI(){
@@ -336,6 +337,7 @@
         +'<font id="arr-sv" color="#7a9bbf" style="font-size:13px">&#9658;</font>'
         +'</span></div>'
         +'<div id="body-sv" style="display:none;padding:0 16px 16px">'
+        +'<input id="import-file-input" type="file" accept=".json,application/json" style="display:none">'
         +'<div id="saves-list"><font color="#7a9bbf" style="font-size:11px">No saved calculations yet.</font></div>'
         +'</div></div>';
       initToggle('hdr-sv','body-sv','arr-sv');
@@ -343,6 +345,7 @@
       gi('print-all-btn').addEventListener('click',function(e){e.stopPropagation();printReport(null);});
       gi('btn-export').addEventListener('click',function(e){e.stopPropagation();doExport();});
       gi('btn-import').addEventListener('click',function(e){e.stopPropagation();doImport();});
+      gi('import-file-input').addEventListener('change',function(){handleImportFile(this.files[0]);this.value='';});
       gi('saves-list').addEventListener('click',function(e){
         var el=e.target.closest('[data-act]');
         if(!el)return;
