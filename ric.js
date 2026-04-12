@@ -1,4 +1,32 @@
 // ric.js — REI Calc external script
+// v2.9  2026-04-12  Cache bust: script src ?v=29 in HTML embed
+//                   Scroll fix: touch-action:pan-y + overscroll-behavior on outer div;
+//                   touchmove stopPropagation in init() for Carrd sandbox scroll trap
+//                   Control buttons: icons only, text labels removed (💾 🖨)
+//                   // Commit: scroll fix, icon-only buttons, cache bust
+// v2.8  2026-04-12  Saved panel moved to topmost position (above Cash Flow);
+//                   Save + Print All buttons merged into panel header row
+//                   // Commit: saved panel to top, save+print in header
+// v2.7  2026-04-12  Saved calculations feature:
+//                   - localStorage bookmarks (SAVES_KEY='rc_saves')
+//                   - Save prompts free-text label, snapshots all inputs + results
+//                   - Load restores all inputs + recalculates
+//                   - Delete per save
+//                   - Print one / Print all: Blob HTML → window.open → window.print()
+//                   - UI fully injected by JS via saved-panel-anchor div
+//                   // Commit: saved calculations - save, load, delete, print
+// v2.6  2026-04-12  Removed dpct (down payment %) display entirely —
+//                   persistent mobile alignment breaker across two sessions
+//                   // Commit: remove dpct
+// v2.5  2026-04-12  Label abbreviations: Purchase price→Price, Down payment→Down,
+//                   Monthly rent→Rent/mo, Interest rate→Interest, Appreciation→Appr.,
+//                   Annual taxes→Taxes/yr, Annual insurance→Insur./yr,
+//                   Annual maintenance→Maint./yr, Monthly HOA→HOA/mo, Loan term→Term(yrs)
+//                   // Commit: brutal label abbreviations for mobile alignment
+// v2.4  2026-04-12  Monthly Payment→Monthly Breakdown; Cash Flow panel one-line layout;
+//                   Term(yrs) number input→Loan dropdown (30yr Fixed / Interest Only);
+//                   IO calc: mpi=loan*mr, balance flat, equity via appreciation only
+//                   // Commit: monthly breakdown rename, one-line CF, loan dropdown
 // v2.3  2026-04-12  Saved calculations: localStorage bookmarks, load, delete, print one / print all
 //                   UI injected via JS (saves-anchor + saved-panel-anchor divs in HTML)
 //                   // Commit: saved calculations feature
