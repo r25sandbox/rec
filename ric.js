@@ -1,4 +1,7 @@
 // ric.js — REI Calc external script
+// v2.3  2026-04-12  Saved calculations: localStorage bookmarks, load, delete, print one / print all
+//                   UI injected via JS (saves-anchor + saved-panel-anchor divs in HTML)
+//                   // Commit: saved calculations feature
 // v2.2  2026-04-11  Restored loan type dropdown (30yr fixed vs interest only);
 //                   loantype change listener added; term input removed;
 //                   cash flow panel one-line layout support
@@ -87,8 +90,189 @@
     for(var i=0;i<els.length;i++){els[i].setAttribute('style',s);}
   }
 
+  // ── Saved calculations ──
+  var SAVES_KEY='rc_saves';
+
+  function loadSaves(){
+    try{return JSON.parse(localStorage.getItem(SAVES_KEY)||'[]');}catch(e){return[];}
+  }
+  function writeSaves(arr){
+    try{localStorage.setItem(SAVES_KEY,JSON.stringify(arr));}catch(e){}
+  }
+
+  function currentInputs(){
+    var ltEl=gi('loantype');
+    return{
+      price:gv('price'),down:gv('down'),rent:gv('rent'),rate:gv('rate'),appr:gv('appr'),
+      vac:gv('vacancy'),taxes:gv('taxes'),ins:gv('ins'),maint:gv('maint'),
+      hoa:gv('hoa'),mgmt:gv('mgmt'),loantype:ltEl?ltEl.value:'30fixed'
+    };
+  }
+
+  function applyInputs(inp){
+    var map={price:'price',down:'down',rent:'rent',rate:'rate',appr:'appr',
+             vac:'vacancy',taxes:'taxes',ins:'ins',maint:'maint',hoa:'hoa',mgmt:'mgmt'};
+    for(var k in map){var el=gi(map[k]);if(el)el.value=inp[k]||0;}
+    var lt=gi('loantype');if(lt)lt.value=inp.loantype||'30fixed';
+    run();
+  }
+
+  function saveCard(s){
+    var mcfCol=s.mcf>=0?'#2ecc71':'#e74c3c';
+    var ltLabel=s.loantype==='30io'?'IO':'Fixed';
+    return '<div style="border-top:1px solid #1e3a5f;padding:10px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">'
+      +'<div style="flex:1;min-width:0">'
+      +'<font color="#ffffff" style="font-size:12px;font-weight:600">'+escHtml(s.label)+'</font>'
+      +'<font color="#7a9bbf" style="font-size:10px"> &middot; '+ltLabel+'</font><br>'
+      +'<font color="'+mcfCol+'" style="font-size:11px;font-weight:700">'+fms(s.mcf)+'/mo</font>'
+      +'<font color="#7a9bbf" style="font-size:10px"> &middot; '+pc(s.coc)+' CoC'
+      +' &middot; '+pc(s.cagr3)+' CAGR@3Y</font>'
+      +'</div>'
+      +'<span style="display:flex;gap:6px;flex-shrink:0">'
+      +'<span data-id="'+s.id+'" data-act="load" style="padding:4px 10px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">Load</span>'
+      +'<span data-id="'+s.id+'" data-act="print" style="padding:4px 10px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">&#128424;</span>'
+      +'<span data-id="'+s.id+'" data-act="del" style="padding:4px 10px;background:#1e3a5f;color:#e74c3c;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">&#10005;</span>'
+      +'</span>'
+      +'</div>';
+  }
+
+  function escHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  function renderSaves(){
+    var arr=loadSaves();
+    var list=gi('saves-list');
+    if(!list)return;
+    if(!arr.length){
+      list.innerHTML='<font color="#7a9bbf" style="font-size:11px">No saved calculations yet.</font>';
+      return;
+    }
+    var html='';
+    for(var i=0;i<arr.length;i++)html+=saveCard(arr[i]);
+    list.innerHTML=html;
+  }
+
+  function doSave(){
+    var label=prompt('Name this calculation (e.g. address or scenario):','');
+    if(!label||!label.trim())return;
+    var inp=currentInputs();
+    // compute results snapshot
+    var loan=Math.max(inp.price-inp.down,0),mr=inp.rate/100/12,np=360,mpi=0;
+    var io=inp.loantype==='30io';
+    if(io){mpi=loan*mr;}else{if(mr>0&&loan>0)mpi=loan*(mr*Math.pow(1+mr,np))/(Math.pow(1+mr,np)-1);}
+    var effRent=inp.rent*(1-inp.vac/100),mgmtFee=effRent*inp.mgmt/100;
+    var totalExp=mpi+inp.taxes/12+inp.ins/12+inp.maint/12+inp.hoa+mgmtFee;
+    var mcf=effRent-totalExp,coc=inp.down>0?(mcf*12/inp.down)*100:0;
+    var e3=eqAt(3,loan,mr,mpi,inp.price,inp.appr,io);
+    var cagr3=inp.down>0&&e3.eq>0?(Math.pow(e3.eq/inp.down,1/3)-1)*100:0;
+    var rec={id:Date.now(),label:label.trim(),savedAt:new Date().toLocaleDateString(),
+             mcf:mcf,coc:coc,cagr3:cagr3,loantype:inp.loantype,inp:inp};
+    var arr=loadSaves();
+    arr.unshift(rec);
+    writeSaves(arr);
+    // open saves panel
+    var body=gi('body-sv'),arr2=gi('arr-sv');
+    if(body){body.style.display='block';}
+    if(arr2){arr2.textContent='\u25BC';}
+    renderSaves();
+  }
+
+  function printReport(ids){
+    var all=loadSaves();
+    var items=ids?all.filter(function(s){return ids.indexOf(s.id)>=0;}):all;
+    if(!items.length)return;
+    var rows='';
+    for(var i=0;i<items.length;i++){
+      var s=items[i];
+      var mcfCol=s.mcf>=0?'#1a7a45':'#b91c1c';
+      var ltLabel=s.loantype==='30io'?'Interest Only':'30yr Fixed';
+      rows+='<div style="background:#fff;border:1px solid #ddd;border-radius:10px;padding:20px;margin-bottom:20px;page-break-inside:avoid">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #c5a050;padding-bottom:10px;margin-bottom:14px">'
+        +'<div><div style="font-size:16px;font-weight:700;color:#0d1b2e">'+escHtml(s.label)+'</div>'
+        +'<div style="font-size:11px;color:#666;margin-top:2px">Saved '+s.savedAt+' &middot; '+ltLabel+'</div></div>'
+        +'<div style="text-align:right"><div style="font-size:22px;font-weight:700;color:'+mcfCol+'">'+fms(s.mcf)+'/mo</div>'
+        +'<div style="font-size:11px;color:#666">'+pc(s.coc)+' Cash-on-Cash</div></div></div>'
+        +'<table style="width:100%;border-collapse:collapse;font-size:12px">'
+        +'<tr><td style="padding:4px 8px;color:#555;width:33%">Price</td><td style="padding:4px 8px;font-weight:600">'+fm(s.inp.price)+'</td>'
+        +'<td style="padding:4px 8px;color:#555">Down</td><td style="padding:4px 8px;font-weight:600">'+fm(s.inp.down)+'</td>'
+        +'<td style="padding:4px 8px;color:#555">Rent/mo</td><td style="padding:4px 8px;font-weight:600">'+fm(s.inp.rent)+'</td></tr>'
+        +'<tr><td style="padding:4px 8px;color:#555">Interest</td><td style="padding:4px 8px;font-weight:600">'+s.inp.rate+'%</td>'
+        +'<td style="padding:4px 8px;color:#555">Appr.</td><td style="padding:4px 8px;font-weight:600">'+s.inp.appr+'%</td>'
+        +'<td style="padding:4px 8px;color:#555">Vacancy</td><td style="padding:4px 8px;font-weight:600">'+s.inp.vac+'%</td></tr>'
+        +'<tr><td style="padding:4px 8px;color:#555">Taxes/yr</td><td style="padding:4px 8px;font-weight:600">'+fm(s.inp.taxes)+'</td>'
+        +'<td style="padding:4px 8px;color:#555">Insur./yr</td><td style="padding:4px 8px;font-weight:600">'+fm(s.inp.ins)+'</td>'
+        +'<td style="padding:4px 8px;color:#555">Maint./yr</td><td style="padding:4px 8px;font-weight:600">'+fm(s.inp.maint)+'</td></tr>'
+        +'<tr><td style="padding:4px 8px;color:#555">HOA/mo</td><td style="padding:4px 8px;font-weight:600">'+fm(s.inp.hoa)+'</td>'
+        +'<td style="padding:4px 8px;color:#555">Mgmt</td><td style="padding:4px 8px;font-weight:600">'+s.inp.mgmt+'%</td>'
+        +'<td></td><td></td></tr>'
+        +'</table></div>';
+    }
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>REI Calc — Saved Properties</title>'
+      +'<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:800px;margin:0 auto;padding:20px;color:#0d1b2e}'
+      +'.hdr{text-align:center;border-bottom:3px solid #c5a050;padding-bottom:14px;margin-bottom:24px}'
+      +'.hdr h1{font-size:20px;color:#0d1b2e;margin:0}.hdr p{font-size:11px;color:#666;margin:4px 0 0}'
+      +'@media print{body{padding:0}}</style></head><body>'
+      +'<div class="hdr"><h1>REI Calculator — Property Comparison</h1><p>Realty 25 AZ &middot; '+new Date().toLocaleDateString()+'</p></div>'
+      +rows
+      +'<p style="font-size:9px;color:#999;text-align:center;margin-top:20px">For informational purposes only. Not financial advice. Realty 25 AZ · realty25az.com</p>'
+      +'</body></html>';
+    var blob=new Blob([html],{type:'text/html'});
+    var url=URL.createObjectURL(blob);
+    var w=window.open(url,'_blank');
+    if(w){w.addEventListener('load',function(){w.print();});}
+    else{var a=document.createElement('a');a.href=url;a.download='REI-Report.html';document.body.appendChild(a);a.click();document.body.removeChild(a);}
+    setTimeout(function(){URL.revokeObjectURL(url);},60000);
+  }
+
+  function injectSavesUI(){
+    // Save button above equity panel
+    var anchor=gi('saves-anchor');
+    if(anchor){
+      anchor.innerHTML='<div style="text-align:right;margin-bottom:12px">'
+        +'<span id="btn-save" style="display:inline-block;padding:6px 14px;background:#c5a050;color:#0d1b2e;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.04em;cursor:pointer">&#128190; Save calc</span>'
+        +'</div>';
+      gi('btn-save').addEventListener('click',doSave);
+    }
+    // Saved panel above property details
+    var panelAnchor=gi('saved-panel-anchor');
+    if(panelAnchor){
+      panelAnchor.innerHTML='<div style="background:#162236;border-radius:10px;margin-bottom:12px;overflow:hidden">'
+        +'<div id="hdr-sv" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">'
+        +'<font color="#ffffff" style="font-size:11px;font-weight:700;letter-spacing:.08em">SAVED CALCULATIONS</font>'
+        +'<span style="display:flex;align-items:center;gap:10px">'
+        +'<span id="print-all-btn" style="font-size:11px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-weight:600">&#128424; All</span>'
+        +'<font id="arr-sv" color="#7a9bbf" style="font-size:13px">&#9658;</font>'
+        +'</span></div>'
+        +'<div id="body-sv" style="display:none;padding:0 16px 16px">'
+        +'<div id="saves-list"><font color="#7a9bbf" style="font-size:11px">No saved calculations yet.</font></div>'
+        +'</div></div>';
+      initToggle('hdr-sv','body-sv','arr-sv');
+      gi('print-all-btn').addEventListener('click',function(e){
+        e.stopPropagation();
+        printReport(null);
+      });
+      gi('saves-list').addEventListener('click',function(e){
+        var el=e.target.closest('[data-act]');
+        if(!el)return;
+        var id=parseInt(el.getAttribute('data-id'));
+        var act=el.getAttribute('data-act');
+        if(act==='load'){
+          var arr=loadSaves();
+          var s=arr.filter(function(x){return x.id===id;})[0];
+          if(s)applyInputs(s.inp);
+        } else if(act==='print'){
+          printReport([id]);
+        } else if(act==='del'){
+          var arr2=loadSaves().filter(function(x){return x.id!==id;});
+          writeSaves(arr2);renderSaves();
+        }
+      });
+      renderSaves();
+    }
+  }
+
   function init(){
     applyInputStyles();
+    injectSavesUI();
     initToggle('hdr-eq','body-eq','arr-eq');
     initToggle('hdr-mo','body-mo','arr-mo');
     run();
