@@ -1,7 +1,6 @@
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;width:100%;padding:16px 12px;background:#0d1b2e;border-radius:12px;box-sizing:border-box;touch-action:pan-y;overscroll-behavior:contain">
 
   <div id="saved-panel-anchor"></div>
-  <div id="save-float-anchor"></div>
     <div style="background:#162236;border-radius:10px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
     <font color="#7a9bbf" style="font-size:10px;font-weight:700;letter-spacing:.06em">CASH FLOW</font>
     <font id="m1v" color="#2ecc71" style="font-size:20px;font-weight:700">$0</font>
@@ -64,30 +63,26 @@
             <font id="b1h" color="#7a9bbf" style="font-size:10px">5% vacancy applied</font>
           </td>
           <td width="33%" style="padding-bottom:12px;vertical-align:top">
-            <font color="#7a9bbf" style="font-size:10px;font-weight:600">MORTGAGE (P&amp;I)</font><br>
+            <font color="#7a9bbf" style="font-size:10px;font-weight:600">MORTGAGE (P&I)</font><br>
             <font id="b2" color="#ffffff" style="font-size:15px;font-weight:700">$0</font>
           </td>
           <td width="33%" style="padding-bottom:12px;vertical-align:top">
             <font color="#7a9bbf" style="font-size:10px;font-weight:600">TAX + INSURANCE</font><br>
             <font id="b3" color="#ffffff" style="font-size:15px;font-weight:700">$0</font><br>
-            <font color="#7a9bbf" style="font-size:10px">monthly</font>
           </td>
         </tr>
         <tr>
           <td style="vertical-align:top">
             <font color="#7a9bbf" style="font-size:10px;font-weight:600">MAINTENANCE</font><br>
             <font id="b4" color="#ffffff" style="font-size:15px;font-weight:700">$0</font><br>
-            <font color="#7a9bbf" style="font-size:10px">monthly</font>
           </td>
           <td style="vertical-align:top">
             <font color="#7a9bbf" style="font-size:10px;font-weight:600">HOA + MGMT</font><br>
             <font id="b5" color="#ffffff" style="font-size:15px;font-weight:700">$0</font><br>
-            <font color="#7a9bbf" style="font-size:10px">monthly</font>
           </td>
           <td style="vertical-align:top">
             <font color="#7a9bbf" style="font-size:10px;font-weight:600">TOTAL EXPENSES</font><br>
             <font id="b6" color="#e74c3c" style="font-size:15px;font-weight:700">$0</font><br>
-            <font color="#7a9bbf" style="font-size:10px">monthly</font>
           </td>
         </tr>
       </table>
@@ -95,7 +90,7 @@
   </div>
 
     <div style="background:#162236;border-radius:10px;padding:16px;margin-bottom:12px">
-    <font color="#ffffff" style="font-size:11px;font-weight:700;letter-spacing:.08em">PROPERTY DETAILS</font>
+    <div style="display:flex;align-items:center;justify-content:space-between"><font color="#ffffff" style="font-size:11px;font-weight:700;letter-spacing:.08em">PROPERTY DETAILS</font><span id="save-float-anchor"></span></div>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px">
       <tr>
         <td width="33%" style="padding:0 6px 12px 0;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Price ($)</font><br><input type="number" id="price" value="500000" step="1000" class="ri"></td>
@@ -108,9 +103,9 @@
         <td style="padding:0 0 12px 6px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Vacancy (%)</font><br><input type="number" id="vacancy" value="5" step="1" class="ri"></td>
       </tr>
       <tr>
-        <td style="padding:0 6px 12px 0;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Taxes/yr ($)</font><br><input type="number" id="taxes" value="3000" step="100" class="ri"><br><font id="th" color="#7a9bbf" style="font-size:10px">&#8776; $250/mo</font></td>
-        <td style="padding:0 6px 12px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Insur./yr ($)</font><br><input type="number" id="ins" value="1200" step="100" class="ri"><br><font id="ih" color="#7a9bbf" style="font-size:10px">&#8776; $100/mo</font></td>
-        <td style="padding:0 0 12px 6px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Maint./yr ($)</font><br><input type="number" id="maint" value="1200" step="100" class="ri"><br><font id="mh" color="#7a9bbf" style="font-size:10px">&#8776; $100/mo</font></td>
+        <td style="padding:0 6px 12px 0;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Taxes/yr ($)</font><br><input type="number" id="taxes" value="3000" step="100" class="ri"><br><font id="th" color="#7a9bbf" style="font-size:10px"></font></td>
+        <td style="padding:0 6px 12px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Insur./yr ($)</font><br><input type="number" id="ins" value="1200" step="100" class="ri"><br><font id="ih" color="#7a9bbf" style="font-size:10px"></font></td>
+        <td style="padding:0 0 12px 6px;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">Maint./yr ($)</font><br><input type="number" id="maint" value="1200" step="100" class="ri"><br><font id="mh" color="#7a9bbf" style="font-size:10px"></font></td>
       </tr>
       <tr>
         <td style="padding:0 6px 0 0;vertical-align:top"><font color="#7a9bbf" style="font-size:11px">HOA/mo ($)</font><br><input type="number" id="hoa" value="150" step="10" class="ri"></td>
@@ -121,9 +116,9 @@
   </div>
     <div style="padding:0 4px 10px">
     <font color="#7a9bbf" style="font-size:11px;line-height:2">
-      * Cash flow = effective rent &#8722; all expenses<br>
-      * Equity = property value &#8722; remaining loan balance<br>
-      * CoC = annual cash flow &#247; down payment<br>
+      * Cash flow = effective rent − all expenses<br>
+      * Equity = property value − remaining loan balance<br>
+      * CoC = annual cash flow ÷ down payment<br>
       * CAGR = compound annual growth rate of equity
     </font>
   </div>
@@ -131,4 +126,4 @@
     <font color="#4a6a8a" style="font-size:10px;line-height:1.7">This calculator is for informational and educational purposes only. Results are estimates based on inputs provided and do not constitute financial, investment, or legal advice. Market conditions, tax implications, and individual circumstances vary. Do your own research (DYOR) and consult a qualified professional before making any investment decisions.</font>
   </div>
 </div>
-<script src="https://r25sandbox.github.io/rec/ric.js?v=34"></script>
+<script src="https://r25sandbox.github.io/rec/ric.js?v=35"></script>
