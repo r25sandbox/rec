@@ -1,4 +1,8 @@
 // ric.js — REI Calc external script
+// v3.4  2026-04-12  Save button moved to float above Cash Flow (top-right of calc area);
+//                   Mgmt fixed: flat $/mo not % (regression fix from Session 1);
+//                   PDF: Mgmt shows $ amount, Loan type shown in inputs grid
+//                   // Commit: save btn float, mgmt dollar fix, PDF loan type
 // v3.3  2026-04-12  Panel title: "SAVED CALCULATIONS" → "SAVED: X" (live count)
 //                   // Commit: panel title shows save count
 // v3.2  2026-04-12  PDF card: navy bar removed entirely; white card with gold left border;
@@ -98,7 +102,7 @@
       if(mr>0&&loan>0)mpi=loan*(mr*Math.pow(1+mr,np))/(Math.pow(1+mr,np)-1);
     }
 
-    var effRent=rent*(1-vac/100),mgmtFee=effRent*mgmt/100;
+    var effRent=rent*(1-vac/100),mgmtFee=mgmt; // mgmt is flat $/mo
     var totalExp=mpi+taxes/12+ins/12+maint/12+hoa+mgmtFee;
     var mcf=effRent-totalExp,coc=down>0?(mcf*12/down)*100:0;
 
@@ -200,7 +204,7 @@
     var loan=Math.max(inp.price-inp.down,0),mr=inp.rate/100/12,np=360,mpi=0;
     var io=inp.loantype==='30io';
     if(io){mpi=loan*mr;}else{if(mr>0&&loan>0)mpi=loan*(mr*Math.pow(1+mr,np))/(Math.pow(1+mr,np)-1);}
-    var effRent=inp.rent*(1-inp.vac/100),mgmtFee=effRent*inp.mgmt/100;
+    var effRent=inp.rent*(1-inp.vac/100),mgmtFee=inp.mgmt; // mgmt flat $/mo
     var totalExp=mpi+inp.taxes/12+inp.ins/12+inp.maint/12+inp.hoa+mgmtFee;
     var mcf=effRent-totalExp,coc=inp.down>0?(mcf*12/inp.down)*100:0;
     var e3=eqAt(3,loan,mr,mpi,inp.price,inp.appr,io);
@@ -249,8 +253,8 @@
         +'<td style="padding:6px 8px;color:#888">Maint./yr</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.maint)+'</td></tr>'
         +'<tr>'
         +'<td style="padding:6px 8px;color:#888">HOA/mo</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.hoa)+'</td>'
-        +'<td style="padding:6px 8px;color:#888">Mgmt</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+s.inp.mgmt+'%</td>'
-        +'<td></td><td></td></tr>'
+        +'<td style="padding:6px 8px;color:#888">Mgmt/mo</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.mgmt)+'</td>'
+        +'<td style="padding:6px 8px;color:#888">Loan</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+ltLabel+'</td></tr>'
         +'</table></div></div>';
     }
     var html='<!DOCTYPE html><html><head><meta charset="UTF-8">'
@@ -335,7 +339,6 @@
         +'<div id="hdr-sv" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">'
         +'<font id="sv-title" color="#ffffff" style="font-size:11px;font-weight:700;letter-spacing:.08em">SAVED: 0</font>'
         +'<span style="display:flex;align-items:center;gap:8px">'
-        +'<span id="btn-save" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#c5a050;color:#0d1b2e;border-radius:4px;line-height:1" title="Save calc">&#128190;</span>'
         +'<span id="print-all-btn" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;line-height:1" title="Print all">&#128424;</span>'
         +'<span id="btn-export" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;line-height:1" title="Export to file">&#11014;</span>'
         +'<span id="btn-import" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;line-height:1" title="Import from file">&#11015;</span>'
@@ -346,7 +349,6 @@
         +'<div id="saves-list"><font color="#7a9bbf" style="font-size:11px">No saved calculations yet.</font></div>'
         +'</div></div>';
       initToggle('hdr-sv','body-sv','arr-sv');
-      gi('btn-save').addEventListener('click',function(e){e.stopPropagation();doSave();});
       gi('print-all-btn').addEventListener('click',function(e){e.stopPropagation();printReport(null);});
       gi('btn-export').addEventListener('click',function(e){e.stopPropagation();doExport();});
       gi('btn-import').addEventListener('click',function(e){e.stopPropagation();doImport();});
@@ -368,6 +370,14 @@
         }
       });
       renderSaves();
+    }
+    // Floating save button — top-right of calc area, above Cash Flow panel
+    var floatAnchor=gi('save-float-anchor');
+    if(floatAnchor){
+      floatAnchor.innerHTML='<div style="text-align:right;margin-bottom:8px">'
+        +'<span id="btn-save" style="display:inline-block;font-size:18px;cursor:pointer;padding:4px 10px;background:#c5a050;color:#0d1b2e;border-radius:6px;line-height:1" title="Save current calc">&#128190;</span>'
+        +'</div>';
+      gi('btn-save').addEventListener('click',doSave);
     }
   }
 
