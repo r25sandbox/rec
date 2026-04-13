@@ -1,5 +1,8 @@
 // ric.js — REI Calc external script
-// v3.4  2026-04-12  Save button moved to float above Cash Flow (top-right of calc area);
+// v3.5  2026-04-12  Save button relocated to Property Details header (right side);
+//                   save-float-anchor moved from between panels to details panel header row
+//                   // Commit: save button in property details header
+// v3.4  2026-04-12  Save button float above Cash Flow; Mgmt flat $/mo fix; PDF loan type
 //                   Mgmt fixed: flat $/mo not % (regression fix from Session 1);
 //                   PDF: Mgmt shows $ amount, Loan type shown in inputs grid
 //                   // Commit: save btn float, mgmt dollar fix, PDF loan type
