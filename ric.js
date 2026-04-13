@@ -1,4 +1,6 @@
 // ric.js — REI Calc external script
+// v3.3  2026-04-12  Panel title: "SAVED CALCULATIONS" → "SAVED: X" (live count)
+//                   // Commit: panel title shows save count
 // v3.2  2026-04-12  PDF card: navy bar removed entirely; white card with gold left border;
 //                   label + cash flow in single header row; bright green/red on white
 //                   // Commit: PDF card - no navy, gold left border, bright cash flow colors
@@ -178,6 +180,9 @@
     var arr=loadSaves();
     var list=gi('saves-list');
     if(!list)return;
+    // Update count in header
+    var titleEl=gi('sv-title');
+    if(titleEl)titleEl.textContent='SAVED: '+arr.length;
     if(!arr.length){
       list.innerHTML='<font color="#7a9bbf" style="font-size:11px">No saved calculations yet.</font>';
       return;
@@ -328,7 +333,7 @@
     if(panelAnchor){
       panelAnchor.innerHTML='<div style="background:#162236;border-radius:10px;margin-bottom:12px;overflow:hidden">'
         +'<div id="hdr-sv" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">'
-        +'<font color="#ffffff" style="font-size:11px;font-weight:700;letter-spacing:.08em">SAVED CALCULATIONS</font>'
+        +'<font id="sv-title" color="#ffffff" style="font-size:11px;font-weight:700;letter-spacing:.08em">SAVED: 0</font>'
         +'<span style="display:flex;align-items:center;gap:8px">'
         +'<span id="btn-save" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#c5a050;color:#0d1b2e;border-radius:4px;line-height:1" title="Save calc">&#128190;</span>'
         +'<span id="print-all-btn" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;line-height:1" title="Print all">&#128424;</span>'
