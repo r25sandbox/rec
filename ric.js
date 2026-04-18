@@ -1,5 +1,8 @@
 // ric.js — REI Calc external script
-// v3.7  2026-04-17  LTV and Down % shown below Property Details inputs, updates live
+// v3.8  2026-04-17  LTV/Down % fix: use span+textContent instead of nested font+set()
+//                   Carrd strips id from nested font tags; spans work reliably
+//                   // Commit: fix LTV Down dynamic update
+// v3.7  2026-04-17  LTV and Down % shown below Property Details
 //                   // Commit: LTV + Down % live display
 // v3.6  2026-04-13  Active calculation tracking: Load highlights row (gold left border,
 //                   "Active" badge); inline 💾 on active row overwrites without prompt;
@@ -102,10 +105,9 @@
     set('th','\u2248 '+fm(taxes/12)+'/mo');
     set('ih','\u2248 '+fm(ins/12)+'/mo');
     set('mh','\u2248 '+fm(maint/12)+'/mo');
-    if(price>0){
-      set('ltv-pct',Math.round((price-down)/price*100)+'%');
-      set('down-pct',Math.round(down/price*100)+'%');
-    }
+    var ltvEl=gi('ltv-pct'),downEl=gi('down-pct');
+    if(ltvEl&&price>0){ltvEl.textContent=Math.round((price-down)/price*100)+'%';}
+    if(downEl&&price>0){downEl.textContent=Math.round(down/price*100)+'%';}
 
     var loan=Math.max(price-down,0),mr=rate/100/12,np=360,mpi=0;
     var io=loantype==='30io';
