@@ -1,4 +1,6 @@
 // ric.js — REI Calc external script
+// v3.9  2026-04-17  PDF report: LTV and Down % added to inputs grid (highlighted row)
+//                   // Commit: PDF LTV + Down % row
 // v3.8  2026-04-17  LTV/Down % fix: use span+textContent instead of nested font+set()
 //                   Carrd strips id from nested font tags; spans work reliably
 //                   // Commit: fix LTV Down dynamic update
@@ -297,6 +299,10 @@
         +'<td style="padding:6px 8px;color:#888">HOA/mo</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.hoa)+'</td>'
         +'<td style="padding:6px 8px;color:#888">Mgmt/mo</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.mgmt)+'</td>'
         +'<td style="padding:6px 8px;color:#888">Loan</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+ltLabel+'</td></tr>'
+        +'<tr style="background:#f4f2ec">'
+        +'<td style="padding:6px 8px;color:#888">LTV</td><td style="padding:6px 8px;font-weight:700;color:#0d1b2e">'+Math.round((s.inp.price-s.inp.down)/s.inp.price*100)+'%</td>'
+        +'<td style="padding:6px 8px;color:#888">Down</td><td style="padding:6px 8px;font-weight:700;color:#0d1b2e">'+Math.round(s.inp.down/s.inp.price*100)+'%</td>'
+        +'<td></td><td></td></tr>'
         +'</table></div></div>';
     }
     var html='<!DOCTYPE html><html><head><meta charset="UTF-8">'
