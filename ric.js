@@ -1,5 +1,10 @@
 // ric.js — REI Calc external script
-// v4.0  2026-04-19  Stability overhaul (informed by Equity Calc chat):
+// v4.1  2026-04-19  Fix SAVED panel toggle: removed initToggle() from injectSavesUI —
+//                   double-wiring caused dumb handler to fire before stopPropagation;
+//                   attachListeners() now solely owns all panel toggles via _toggled guard.
+//                   Fix loantype: added input event alongside change for Carrd compatibility.
+//                   // Commit: fix saved panel toggle + loantype change
+// v4.0  2026-04-19  Stability overhaul (informed by Equity Calc chat)
 //                   - attachListeners() with removeEventListener guards prevents duplicate handlers
 //                   - Panel toggles use _toggled guard; child button clicks don't collapse panel
 //                   - Single setTimeout(run,300) at init — Carrd DOM settling re-run
@@ -404,7 +409,7 @@
         +'<input id="import-file-input" type="file" accept=".json,application/json" style="display:none">'
         +'<div id="saves-list"><font color="#7a9bbf" style="font-size:11px">No saved calculations yet.</font></div>'
         +'</div></div>';
-      initToggle('hdr-sv','body-sv','arr-sv');
+      // NOTE: toggle for hdr-sv is wired by attachListeners(), not here
       gi('print-all-btn').addEventListener('click',function(e){e.stopPropagation();printReport(null);});
       gi('btn-export').addEventListener('click',function(e){e.stopPropagation();doExport();});
       gi('btn-import').addEventListener('click',function(e){e.stopPropagation();doImport();});
@@ -476,11 +481,13 @@
         el.addEventListener('input',run);
       }
     }
-    // Loan type — change event
+    // Loan type — wire both change and input for cross-browser/Carrd compatibility
     var lt=gi('loantype');
     if(lt){
       lt.removeEventListener('change',run);
+      lt.removeEventListener('input',run);
       lt.addEventListener('change',run);
+      lt.addEventListener('input',run);
     }
     // Collapsible panels — use the header click directly
     var panels=[['hdr-eq','body-eq','arr-eq'],['hdr-mo','body-mo','arr-mo'],['hdr-sv','body-sv','arr-sv']];
