@@ -1,5 +1,7 @@
 // eec.js — Equity Extraction Calculator
-// v1.1.1 | 2026-04-18 | Save card: replace RIC cash flow/CoC with rent/mo (purchase metrics
+// v1.1.2 | 2026-04-18 | Remove vacancy input; effRent = gross rent; remove vacancy from wireInputs
+//                        Commit: rm vacancy input + calc
+// v1.1.1 | 2026-04-18 | Save card: replace RIC cash flow/CoC with rent/mo
 //                        are irrelevant in refi context; rent is the meaningful preview field)
 //                        Commit: fix save card — show rent not RIC mcf/CoC
 // v1.1.0 | 2026-04-18 | 3-col compact inputs; remove slider breakdown section;
@@ -43,7 +45,6 @@
     var refirate = gv('refirate') || 6.75;
     var loanType = gs('loantype') || '30fixed';
     var rent     = gv('rent')     || 2400;
-    var vacancy  = gv('vacancy')  || 5;
     var taxes    = gv('taxes')    || 3600;
     var ins      = gv('ins')      || 1800;
     var hoa      = gv('hoa')      || 150;
@@ -52,7 +53,7 @@
 
     var currentEquity = propval - balance;
     var ltv = propval>0 ? (balance/propval*100) : 0;
-    var effRent  = rent*(1-vacancy/100);
+    var effRent  = rent;  // no vacancy adjustment — gross rent used directly
     var taxIns   = (taxes+ins)/12;
     var hoaMgmtMaint = hoa+mgmt+maint/12;
     var fixedExp = taxIns+hoaMgmtMaint;
@@ -238,7 +239,7 @@
 
   // ── Wire events ───────────────────────────────────────────────────────────
   function wireInputs(){
-    var ids=['balance','propval','refirate','rent','vacancy','taxes','ins','hoa','mgmt','maint'];
+    var ids=['balance','propval','refirate','rent','taxes','ins','hoa','mgmt','maint'];
     ids.forEach(function(id){
       var el=gi(id);
       if(el) el.addEventListener('input', run);
