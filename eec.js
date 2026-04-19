@@ -1,5 +1,7 @@
 // eec.js — Equity Extraction Calculator
-// v1.8.4 | 2026-04-18 | Remove setTimeout(run,300) — was overwriting slider after Load;
+// v1.8.5 | 2026-04-18 | Print: "max cash-out"→"extracted"; "CF at max extraction"→"cash flow";
+//                        binding label: "CF limit"→"cash flow limited", "80% LTV"→"LTV limited"
+//                        Commit: print label cleanup
 //                        force slider.value+updateSlider() after run() in applyInputs
 //                        Commit: fix slider restore on load — remove setTimeout re-run
 // v1.8.3 | 2026-04-18 | Save slider position as savedExtract; Load restores to savedExtract
@@ -88,8 +90,8 @@
     var maxCashOut=Math.max(maxNewLoan-inp.balance,0);
     var newPmt=calcPmt(maxNewLoan,inp.refirate,inp.loantype);
     var newCF=effRent-fixedExp-newPmt;
-    var binding=(maxLoanCF<=maxLoanLTV&&maxLoanCF>=0)?'CF limit':'80% LTV';
-    if(maxCashOut===0) binding='no cash-out';
+    var binding=(maxLoanCF<=maxLoanLTV&&maxLoanCF>=0)?'cash flow limited':'LTV limited';
+    if(maxCashOut===0) binding='no cash-out available';
     return {maxCashOut:maxCashOut,newCF:newCF,binding:binding,
             effRent:effRent,fixedExp:fixedExp,maxNewLoan:maxNewLoan};
   }
@@ -247,7 +249,9 @@
     var rows='';
     for(var i=0;i<subset.length;i++){
       var s=subset[i]; var inp=s.inp||{};
-      var cfCol=s.newCF>=0?'#16a34a':'#dc2626';
+      var dispExtract=s.savedExtract!==undefined?s.savedExtract:s.maxCashOut;
+      var dispCF=s.savedCF!==undefined?s.savedCF:s.newCF;
+      var cfCol=dispCF>=0?'#16a34a':'#dc2626';
       var ltLabel=inp.loantype==='30io'?'Interest Only':'30yr Fixed';
       rows+='<div style="border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:20px;page-break-inside:avoid">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">'
@@ -255,11 +259,11 @@
         +'<p style="margin:3px 0 0;font-size:11px;color:#64748b">Saved '+escHtml(s.savedAt)+' &middot; '+ltLabel+' &middot; '+escHtml(s.binding)+'</p></div>'
         +'<div style="display:flex;gap:20px;flex-shrink:0">'
         +'<div style="text-align:right;border-right:1px solid #e2e8f0;padding-right:20px">'
-        +'<div style="font-size:22px;font-weight:700;color:#0d1b2e">'+fm(s.maxCashOut)+'</div>'
-        +'<div style="font-size:11px;color:#64748b">max cash-out</div></div>'
+        +'<div style="font-size:22px;font-weight:700;color:#0d1b2e">'+fm(dispExtract)+'</div>'
+        +'<div style="font-size:11px;color:#64748b">extracted</div></div>'
         +'<div style="text-align:right">'
-        +'<div style="font-size:22px;font-weight:700;color:'+cfCol+'">'+fms(s.newCF)+'/mo</div>'
-        +'<div style="font-size:11px;color:#64748b">CF at max extraction</div></div>'
+        +'<div style="font-size:22px;font-weight:700;color:'+cfCol+'">'+fms(dispCF)+'/mo</div>'
+        +'<div style="font-size:11px;color:#64748b">cash flow</div></div>'
         +'</div></div>'
         +'<table style="width:100%;border-collapse:collapse;font-size:12px">'
         +'<tr><td style="padding:5px 8px;color:#555;width:35%">Loan balance</td>'
