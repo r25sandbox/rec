@@ -1,4 +1,7 @@
 // eec.js — Equity Extraction Calculator
+// v1.1.1 | 2026-04-18 | Save card: replace RIC cash flow/CoC with rent/mo (purchase metrics
+//                        are irrelevant in refi context; rent is the meaningful preview field)
+//                        Commit: fix save card — show rent not RIC mcf/CoC
 // v1.1.0 | 2026-04-18 | 3-col compact inputs; remove slider breakdown section;
 //                        load from RIC localStorage saves (rc_saves); applyInputStyles()
 //                        Commit: compact inputs, rm slider breakdown, load RIC saves
@@ -201,15 +204,14 @@
     var html='';
     for(var i=0;i<arr.length;i++){
       var s=arr[i];
-      var mcfCol=s.mcf>=0?'#2ecc71':'#e74c3c';
-      var mcfStr=(s.mcf>=0?'+':'')+Math.round(s.mcf);
+      var inp=s.inputs||{};
       var ltLabel=s.loantype==='30io'?'IO':'Fixed';
+      var rentStr=inp.rent ? '$'+Math.round(inp.rent).toLocaleString()+'/mo rent' : '';
       html+='<div style="border-top:1px solid #1e3a5f;padding:9px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">'
         +'<div style="flex:1;min-width:0">'
         +'<font color="#ffffff" style="font-size:12px;font-weight:600">'+escHtml(s.label)+'</font>'
         +' <font color="#7a9bbf" style="font-size:9px">· '+ltLabel+'</font><br>'
-        +'<font color="'+mcfCol+'" style="font-size:11px;font-weight:700">$'+mcfStr+'/mo</font>'
-        +'<font color="#7a9bbf" style="font-size:10px"> · '+pc(s.coc)+' CoC</font>'
+        +'<font color="#7a9bbf" style="font-size:10px">'+rentStr+'</font>'
         +'</div>'
         +'<span data-rid="'+s.id+'" style="padding:4px 12px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">Load</span>'
         +'</div>';
