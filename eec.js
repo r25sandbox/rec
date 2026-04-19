@@ -1,5 +1,8 @@
 // eec.js — Equity Extraction Calculator
-// v1.7.0 | 2026-04-18 | Active row tracking (gold border, Active badge, inline overwrite 💾);
+// v1.7.1 | 2026-04-18 | Save card: lead with max cash-out (gold), CF@max as labeled subtext
+//                        eliminates confusion between save card CF vs slider CF
+//                        Commit: save card clarity — cash-out primary, CF@max secondary
+// v1.7.0 | 2026-04-18 | Active row; HOA fix; thick arrows
 //                        fix HOA/all-inputs save bug (|| default masks real 0 — use gvd());
 //                        export/import arrow icons thicker (↑↓ Unicode arrows);
 //                        Commit: active state, fix HOA/0-value save bug, arrow icons
@@ -309,8 +312,8 @@
       +'<div style="flex:1;min-width:0">'
       +'<font color="#ffffff" style="font-size:12px;font-weight:600">'+escHtml(s.label)+'</font>'
       +' <font color="#7a9bbf" style="font-size:9px">&#183; '+ltLabel+'</font><br>'
-      +'<font color="'+cfCol+'" style="font-size:11px;font-weight:700">'+fms(s.newCF)+'/mo CF</font>'
-      +' <font color="#7a9bbf" style="font-size:10px">&#183; '+fm(s.maxCashOut)+' out</font>'
+      +'<font color="#E8C96A" style="font-size:12px;font-weight:700">'+fm(s.maxCashOut)+' out</font>'
+      +' <font color="'+cfCol+'" style="font-size:9px">&#183; CF@max: '+fms(s.newCF)+'</font>'
       +'</div>'
       +'<span style="display:flex;gap:5px;flex-shrink:0">'
       +loadBtn
