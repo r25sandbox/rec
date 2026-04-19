@@ -1,5 +1,9 @@
 // ric.js — REI Calc external script
-// v4.2  2026-04-19  loantype fix: applyInputStyles() skips SELECT elements —
+// v4.3  2026-04-19  loantype select: removed class="ri" from HTML — JS never touches it
+//                   with setAttribute, so listeners survive. Styled inline in HTML instead.
+//                   applyInputStyles() back to simple loop (select excluded by not having ri class)
+//                   // Commit: loantype select styled in HTML not JS - preserves listeners
+// v4.2  2026-04-19  loantype fix: applyInputStyles skips SELECT (superseded by v4.3)
 //                   setAttribute('style') rebuilds the element on some browsers,
 //                   wiping event listeners before they can be attached.
 //                   SELECT styled via individual style properties instead.
@@ -164,18 +168,7 @@
   function applyInputStyles(){
     var s='width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box';
     var els=document.getElementsByClassName('ri');
-    for(var i=0;i<els.length;i++){
-      if(els[i].tagName!=='SELECT') els[i].setAttribute('style',s);
-    }
-    // Style select separately — setAttribute rebuilds the element on some browsers,
-    // wiping event listeners. Use style properties directly instead.
-    var sel=gi('loantype');
-    if(sel){
-      sel.style.width='100%';sel.style.marginTop='4px';sel.style.padding='7px 8px';
-      sel.style.background='#0d1b2e';sel.style.color='#ffffff';
-      sel.style.border='1px solid #2a4a6b';sel.style.borderRadius='6px';
-      sel.style.fontSize='12px';sel.style.fontFamily='inherit';sel.style.boxSizing='border-box';
-    }
+    for(var i=0;i<els.length;i++){els[i].setAttribute('style',s);}
   }
 
   // ── Saved calculations ──
