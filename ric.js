@@ -1,5 +1,10 @@
 // ric.js — REI Calc external script
-// v4.1  2026-04-19  Fix SAVED panel toggle: removed initToggle() from injectSavesUI —
+// v4.2  2026-04-19  loantype fix: applyInputStyles() skips SELECT elements —
+//                   setAttribute('style') rebuilds the element on some browsers,
+//                   wiping event listeners before they can be attached.
+//                   SELECT styled via individual style properties instead.
+//                   // Commit: fix loantype - dont setAttribute on select
+// v4.1  2026-04-19  Fix SAVED panel toggle + loantype change+input events
 //                   double-wiring caused dumb handler to fire before stopPropagation;
 //                   attachListeners() now solely owns all panel toggles via _toggled guard.
 //                   Fix loantype: added input event alongside change for Carrd compatibility.
@@ -159,7 +164,18 @@
   function applyInputStyles(){
     var s='width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box';
     var els=document.getElementsByClassName('ri');
-    for(var i=0;i<els.length;i++){els[i].setAttribute('style',s);}
+    for(var i=0;i<els.length;i++){
+      if(els[i].tagName!=='SELECT') els[i].setAttribute('style',s);
+    }
+    // Style select separately — setAttribute rebuilds the element on some browsers,
+    // wiping event listeners. Use style properties directly instead.
+    var sel=gi('loantype');
+    if(sel){
+      sel.style.width='100%';sel.style.marginTop='4px';sel.style.padding='7px 8px';
+      sel.style.background='#0d1b2e';sel.style.color='#ffffff';
+      sel.style.border='1px solid #2a4a6b';sel.style.borderRadius='6px';
+      sel.style.fontSize='12px';sel.style.fontFamily='inherit';sel.style.boxSizing='border-box';
+    }
   }
 
   // ── Saved calculations ──
