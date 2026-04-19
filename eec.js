@@ -1,11 +1,10 @@
 // eec.js — Equity Extraction Calculator
-// v1.8.0 | 2026-04-18 | Save/load rewritten to exactly match RIC pattern:
-//                        save = inp + computed results; load = restore inputs + run();
-//                        slider is scratchpad only, not persisted (same as RIC)
-//                        Commit: port RIC save/load pattern exactly — no slider persistence
-// v1.7.x | 2026-04-18 | Various attempts at slider persistence — abandoned
-// v1.6.0 | 2026-04-18 | UX polish: SAVED at top, white headers, export/import
-// v1.0.0 | 2026-04-18 | Initial build
+// v1.8.1 | 2026-04-18 | Fix ID comparison (parseInt corrupts large timestamps — use string match);
+//                        fix applyInputs (remove renderSaves/scroll — click handler owns UI);
+//                        reset slider to 0 on load for clean predictable state;
+//                        add ?v=18 cache-bust in HTML
+//                        Commit: fix load/overwrite/del ID bug; clean applyInputs
+// v1.8.0 | 2026-04-18 | Port RIC save/load pattern exactly
 
 (function(){
 
@@ -162,23 +161,23 @@
     if(body&&body.style.display!=='block'){body.style.display='block';if(arr_el)arr_el.innerHTML='&#9660;';}
   }
 
-  // applyInputs — identical pattern to RIC
+  // applyInputs — identical pattern to RIC; click handler calls renderSaves after
   function applyInputs(inp,id){
     function sv(elId,v){var el=gi(elId);if(el&&v!==undefined&&v!==null)el.value=v;}
     sv('balance',inp.balance); sv('propval',inp.propval); sv('refirate',inp.refirate);
     sv('rent',inp.rent); sv('taxes',inp.taxes); sv('ins',inp.ins);
     sv('hoa',inp.hoa); sv('mgmt',inp.mgmt); sv('maint',inp.maint);
     var lt=gi('loantype'); if(lt&&inp.loantype) lt.value=inp.loantype;
+    // Reset slider to 0 for clean state on every load
+    var sl=gi('slider'); if(sl) sl.value=0;
     activeId=id||null;
-    run();
-    renderSaves();
-    var wrap=gi('eec-wrap'); if(wrap) wrap.scrollIntoView({behavior:'smooth',block:'start'});
+    run(); // run() calls updateSlider() which reads slider=0
   }
 
   // overwrite — identical pattern to RIC
   function doOverwrite(id){
     var arr=loadSaves();
-    var idx=-1; for(var i=0;i<arr.length;i++){if(arr[i].id===id){idx=i;break;}}
+    var idx=-1; for(var i=0;i<arr.length;i++){if(String(arr[i].id)===String(id)){idx=i;break;}}
     if(idx<0) return;
     var inp=currentInputs();
     var res=computeResults(inp);
@@ -226,7 +225,7 @@
   // ── Print ─────────────────────────────────────────────────────────────────
   function printReport(ids){
     var arr=loadSaves();
-    var subset=ids?arr.filter(function(s){return ids.indexOf(s.id)>=0;}):arr;
+    var subset=ids?arr.filter(function(s){return ids.indexOf(String(s.id))>=0;}):arr;
     if(!subset.length) return;
     var rows='';
     for(var i=0;i<subset.length;i++){
@@ -317,7 +316,7 @@
     var countEl=gi('eec-saves-count');
     if(countEl) countEl.innerHTML='SAVED: '+arr.length;
     if(!arr.length){list.innerHTML='<font color="#7a9bbf" style="font-size:11px">No saved scenarios yet.</font>';return;}
-    var html=''; for(var i=0;i<arr.length;i++) html+=saveCard(arr[i],arr[i].id===activeId);
+    var html=''; for(var i=0;i<arr.length;i++) html+=saveCard(arr[i],String(arr[i].id)===String(activeId));
     list.innerHTML=html;
   }
 
@@ -348,18 +347,25 @@
       gi('body-sv').addEventListener('click',function(e){
         var el=e.target.closest('[data-act]');
         if(!el) return;
-        var id=parseInt(el.getAttribute('data-id'));
+        var id=el.getAttribute('data-id');  // keep as STRING — parseInt corrupts large timestamps
         var act=el.getAttribute('data-act');
         if(act==='load'){
           var arr=loadSaves();
-          for(var k=0;k<arr.length;k++){if(arr[k].id===id){applyInputs(arr[k].inp,arr[k].id);break;}}
+          for(var k=0;k<arr.length;k++){
+            if(String(arr[k].id)===id){
+              applyInputs(arr[k].inp,arr[k].id);
+              renderSaves();
+              var wrap=gi('eec-wrap'); if(wrap) wrap.scrollIntoView({behavior:'smooth',block:'start'});
+              break;
+            }
+          }
         } else if(act==='overwrite'){
           doOverwrite(id);
         } else if(act==='print'){
           printReport([id]);
         } else if(act==='del'){
-          if(id===activeId) activeId=null;
-          writeSaves(loadSaves().filter(function(x){return x.id!==id;})); renderSaves();
+          if(String(activeId)===id) activeId=null;
+          writeSaves(loadSaves().filter(function(x){return String(x.id)!==id;})); renderSaves();
         }
       });
       renderSaves();
