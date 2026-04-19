@@ -1,5 +1,9 @@
 // ric.js — REI Calc external script
-// v4.8  2026-04-19  applyInputs: setAll() immediate + 150ms setTimeout re-apply —
+// v4.9  2026-04-19  applyInputs: ported exact EEC sv() pattern — explicit per-field
+//                   assignments via sv(elId,v) helper (only sets if value defined).
+//                   No map loop, no setTimeout, matches proven EEC implementation.
+//                   // Commit: applyInputs EEC sv() pattern - explicit field assignments
+// v4.8  2026-04-19  applyInputs delayed re-set (superseded)
 //                   Carrd resets input values after JS sets them; the delayed re-apply
 //                   wins the race. run() only called after the delay so it reads correct values.
 //                   // Commit: applyInputs delayed re-set to beat Carrd value reset
@@ -228,16 +232,15 @@
   }
 
   function applyInputs(inp,id){
-    var map={price:'price',down:'down',rent:'rent',rate:'rate',appr:'appr',
-             vac:'vacancy',taxes:'taxes',ins:'ins',maint:'maint',hoa:'hoa',mgmt:'mgmt'};
-    function setAll(){
-      for(var k in map){var el=gi(map[k]);if(el)el.value=inp[k]!==undefined?inp[k]:0;}
-      var lt=getLoanSelect();if(lt)lt.value=inp.loantype||'30fixed';
-    }
-    setAll();
+    function sv(elId,v){var el=gi(elId);if(el&&v!==undefined&&v!==null)el.value=v;}
+    sv('price',inp.price); sv('down',inp.down); sv('rent',inp.rent);
+    sv('rate',inp.rate); sv('appr',inp.appr); sv('vacancy',inp.vac);
+    sv('taxes',inp.taxes); sv('ins',inp.ins); sv('maint',inp.maint);
+    sv('hoa',inp.hoa); sv('mgmt',inp.mgmt);
+    var lt=getLoanSelect(); if(lt&&inp.loantype) lt.value=inp.loantype;
     activeId=id||null;
-    // Re-apply after brief delay — Carrd can reset input values after JS sets them
-    setTimeout(function(){setAll();run();renderSaves();},150);
+    run();
+    renderSaves();
   }
 
   // ── Active calculation tracking ──
