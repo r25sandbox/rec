@@ -1,9 +1,8 @@
 // eec.js — Equity Extraction Calculator
-// v1.8.3 | 2026-04-18 | Save slider position as savedExtract; Load restores to savedExtract;
-//                        card shows CF+extraction at savedExtract, not at maxCashOut
-//                        Commit: save/load slider position — WYSIWYG
-// v1.8.2 | 2026-04-18 | Load sets slider to maxCashOut — partial fix
-// v1.8.1 | 2026-04-18 | Fix parseInt ID corruption; clean applyInputs
+// v1.8.4 | 2026-04-18 | Remove setTimeout(run,300) — was overwriting slider after Load;
+//                        force slider.value+updateSlider() after run() in applyInputs
+//                        Commit: fix slider restore on load — remove setTimeout re-run
+// v1.8.3 | 2026-04-18 | Save slider position as savedExtract; Load restores to savedExtract
 //                        fix applyInputs (remove renderSaves/scroll — click handler owns UI);
 //                        reset slider to 0 on load for clean predictable state;
 //                        add ?v=18 cache-bust in HTML
@@ -171,7 +170,6 @@
     if(body&&body.style.display!=='block'){body.style.display='block';if(arr_el)arr_el.innerHTML='&#9660;';}
   }
 
-  // applyInputs — restore inputs + set slider to targetExtract (maxCashOut of the save)
   function applyInputs(inp,id,targetExtract){
     function sv(elId,v){var el=gi(elId);if(el&&v!==undefined&&v!==null)el.value=v;}
     sv('balance',inp.balance); sv('propval',inp.propval); sv('refirate',inp.refirate);
@@ -179,11 +177,11 @@
     sv('hoa',inp.hoa); sv('mgmt',inp.mgmt); sv('maint',inp.maint);
     var lt=gi('loantype'); if(lt&&inp.loantype) lt.value=inp.loantype;
     activeId=id||null;
-    run(); // sets _state and slider max
-    // After run() has set correct bounds, position slider at saved extraction amount
+    run();
+    // Set slider AFTER run() — run() may clamp it, so force the value here
     var sl=gi('slider');
-    if(sl){
-      sl.value=targetExtract||0;
+    if(sl && targetExtract!==undefined){
+      sl.value=targetExtract;
       updateSlider();
     }
   }
@@ -413,7 +411,6 @@
     injectSavesUI();
     wireInputs();
     run();
-    setTimeout(run,300);
   }
 
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
