@@ -1,5 +1,69 @@
 // ric.js — REI Calc external script
-// v3.9  2026-04-17  PDF report: LTV and Down % added to inputs grid (highlighted row)
+// v4.11 2026-04-19  Remove setTimeout(run,300) from init() — it fires after user clicks Load
+//                   and resets all display values back to DOM defaults, undoing the load.
+//                   Hint labels appeared correct because run() recalculates from reset DOM.
+//                   Same fix applied in EEC chat after identical symptom. run() on init
+//                   is sufficient — hardcoded defaults in run() handle Carrd's value reset.
+//                   // Commit: remove init setTimeout - was clobbering Load state
+// v4.10 2026-04-19  Inline style taxes/ins/maint - fix Load not restoring row 3
+//                   applyInputStyles() setAttribute() rebuilds inputs that have sibling
+//                   <br><font> hint elements — Carrd-specific DOM reconstruction bug.
+//                   Fix: remove class="ri" from taxes/ins/maint; style them inline in HTML.
+//                   applyInputStyles only runs on 8 inputs now (no hints); these 3 are safe.
+//                   // Commit: inline style taxes/ins/maint inputs - fix Load not restoring row 3
+// v4.9  2026-04-19  applyInputs EEC sv() pattern
+//                   assignments via sv(elId,v) helper (only sets if value defined).
+//                   No map loop, no setTimeout, matches proven EEC implementation.
+//                   // Commit: applyInputs EEC sv() pattern - explicit field assignments
+// v4.8  2026-04-19  applyInputs delayed re-set (superseded)
+//                   Carrd resets input values after JS sets them; the delayed re-apply
+//                   wins the race. run() only called after the delay so it reads correct values.
+//                   // Commit: applyInputs delayed re-set to beat Carrd value reset
+// v4.7  2026-04-19  RESET to proven EEC pattern
+//                   wireInputs() simple forEach + addEventListener (no removeEventListener)
+//                   wirePanels() calls initToggle for all 3 panels
+//                   applyInputStyles() back to setAttribute (safe: wireInputs runs after)
+//                   applyInputs() simple direct set + run() (no setTimeout)
+//                   initToggle ignores child button clicks via closest() check
+//                   // Commit: reset to EEC proven pattern - remove all complexity
+// v4.6  2026-04-19  applyInputs double-set (superseded)
+//                   to survive any Carrd DOM interference between set and run()
+//                   // Commit: applyInputs double-set for reliability
+// v4.5  2026-04-19  ROOT CAUSE FIX: applyInputStyles use style properties not setAttribute
+//                   which rebuilds DOM elements and wipes all event listeners on every input.
+//                   Switched to individual el.style.X property assignments which mutate
+//                   the existing element in-place — listeners survive.
+//                   This fixes ALL inputs not triggering recalc, not just loantype.
+//                   // Commit: applyInputStyles use style properties not setAttribute
+// v4.4  2026-04-19  Robust loantype select handling
+//                   getLoanSelect() finds select via id, data-rid, or querySelector fallback
+//                   getLoanType() used everywhere instead of gi('loantype').value
+//                   data-rid="loantype" added to HTML select as backup attribute
+//                   Document-level change delegation catches select even if id stripped
+//                   // Commit: robust loantype select - multi-fallback finder + delegation
+// v4.3  2026-04-19  loantype select styled in HTML not JS
+//                   with setAttribute, so listeners survive. Styled inline in HTML instead.
+//                   applyInputStyles() back to simple loop (select excluded by not having ri class)
+//                   // Commit: loantype select styled in HTML not JS - preserves listeners
+// v4.2  2026-04-19  loantype fix: applyInputStyles skips SELECT (superseded by v4.3)
+//                   setAttribute('style') rebuilds the element on some browsers,
+//                   wiping event listeners before they can be attached.
+//                   SELECT styled via individual style properties instead.
+//                   // Commit: fix loantype - dont setAttribute on select
+// v4.1  2026-04-19  Fix SAVED panel toggle + loantype change+input events
+//                   double-wiring caused dumb handler to fire before stopPropagation;
+//                   attachListeners() now solely owns all panel toggles via _toggled guard.
+//                   Fix loantype: added input event alongside change for Carrd compatibility.
+//                   // Commit: fix saved panel toggle + loantype change
+// v4.0  2026-04-19  Stability overhaul (informed by Equity Calc chat)
+//                   - attachListeners() with removeEventListener guards prevents duplicate handlers
+//                   - Panel toggles use _toggled guard; child button clicks don't collapse panel
+//                   - Single setTimeout(run,300) at init — Carrd DOM settling re-run
+//                     (multiple re-runs removed: they interfere with applyInputs/Load)
+//                   - loantype change reliably fires run() on all platforms
+//                   Green flash on overwrite save (ported from Equity Calc)
+//                   // Commit: stability overhaul + green flash on overwrite
+// v3.9  2026-04-17  PDF report: LTV and Down % added to inputs grid
 //                   // Commit: PDF LTV + Down % row
 // v3.8  2026-04-17  LTV/Down % fix: use span+textContent instead of nested font+set()
 //                   Carrd strips id from nested font tags; spans work reliably
@@ -82,12 +146,24 @@
   function initToggle(hdrId,bodyId,arrId){
     var hdr=gi(hdrId),body=gi(bodyId),arr=gi(arrId);
     if(!hdr||!body||!arr)return;
-    hdr.addEventListener('click',function(){
+    hdr.addEventListener('click',function(e){
+      if(e.target.closest('[data-act],[id^="btn-"],[id$="-btn"]'))return;
       var open=body.style.display==='block';
       body.style.display=open?'none':'block';
       arr.textContent=open?'\u25B6':'\u25BC';
     });
   }
+
+  // Robust select finder — Carrd sometimes strips id from select elements
+  function getLoanSelect(){
+    return gi('loantype')
+      || document.querySelector('[data-rid="loantype"]')
+      || document.querySelector('select');
+  }
+  function getLoanType(){
+    var el=getLoanSelect(); return el?el.value:'30fixed';
+  }
+
 
   function eqAt(yr,loan,mr,mpi,price,appr,io){
     var pv=price*Math.pow(1+appr/100,yr),bal=loan;
@@ -101,7 +177,7 @@
     var price=gv('price'),down=gv('down'),rent=gv('rent'),rate=gv('rate'),appr=gv('appr'),
         vac=gv('vacancy'),taxes=gv('taxes'),ins=gv('ins'),maint=gv('maint'),
         hoa=gv('hoa'),mgmt=gv('mgmt');
-    var ltEl=gi('loantype'),loantype=ltEl?ltEl.value:'30fixed';
+    var loantype=getLoanType();
     if(!price){price=500000;down=100000;rent=3000;rate=6.5;appr=5;vac=5;taxes=3000;ins=1200;maint=1200;hoa=150;mgmt=0;}
 
     set('th','\u2248 '+fm(taxes/12)+'/mo');
@@ -160,19 +236,20 @@
   }
 
   function currentInputs(){
-    var ltEl=gi('loantype');
     return{
       price:gv('price'),down:gv('down'),rent:gv('rent'),rate:gv('rate'),appr:gv('appr'),
       vac:gv('vacancy'),taxes:gv('taxes'),ins:gv('ins'),maint:gv('maint'),
-      hoa:gv('hoa'),mgmt:gv('mgmt'),loantype:ltEl?ltEl.value:'30fixed'
+      hoa:gv('hoa'),mgmt:gv('mgmt'),loantype:getLoanType()
     };
   }
 
   function applyInputs(inp,id){
-    var map={price:'price',down:'down',rent:'rent',rate:'rate',appr:'appr',
-             vac:'vacancy',taxes:'taxes',ins:'ins',maint:'maint',hoa:'hoa',mgmt:'mgmt'};
-    for(var k in map){var el=gi(map[k]);if(el)el.value=inp[k]||0;}
-    var lt=gi('loantype');if(lt)lt.value=inp.loantype||'30fixed';
+    function sv(elId,v){var el=gi(elId);if(el&&v!==undefined&&v!==null)el.value=v;}
+    sv('price',inp.price); sv('down',inp.down); sv('rent',inp.rent);
+    sv('rate',inp.rate); sv('appr',inp.appr); sv('vacancy',inp.vac);
+    sv('taxes',inp.taxes); sv('ins',inp.ins); sv('maint',inp.maint);
+    sv('hoa',inp.hoa); sv('mgmt',inp.mgmt);
+    var lt=getLoanSelect(); if(lt&&inp.loantype) lt.value=inp.loantype;
     activeId=id||null;
     run();
     renderSaves();
@@ -396,7 +473,7 @@
         +'<input id="import-file-input" type="file" accept=".json,application/json" style="display:none">'
         +'<div id="saves-list"><font color="#7a9bbf" style="font-size:11px">No saved calculations yet.</font></div>'
         +'</div></div>';
-      initToggle('hdr-sv','body-sv','arr-sv');
+      // NOTE: toggle for hdr-sv is wired by attachListeners(), not here
       gi('print-all-btn').addEventListener('click',function(e){e.stopPropagation();printReport(null);});
       gi('btn-export').addEventListener('click',function(e){e.stopPropagation();doExport();});
       gi('btn-import').addEventListener('click',function(e){e.stopPropagation();doImport();});
@@ -418,7 +495,7 @@
           var res=computeResults(inp);
           arr[idx].inp=inp;arr[idx].mcf=res.mcf;arr[idx].coc=res.coc;arr[idx].cagr3=res.cagr3;
           arr[idx].loantype=inp.loantype;arr[idx].savedAt=new Date().toLocaleDateString();
-          writeSaves(arr);renderSaves();
+          writeSaves(arr);renderSaves();flashRow(id);
         } else if(act==='print'){
           printReport([id]);
         } else if(act==='del'){
@@ -439,19 +516,45 @@
     }
   }
 
+  // ── Flash row green after overwrite save ──
+  function flashRow(id){
+    var list=gi('saves-list');
+    if(!list)return;
+    var btns=list.querySelectorAll('[data-act="overwrite"]');
+    for(var i=0;i<btns.length;i++){
+      if(parseInt(btns[i].getAttribute('data-id'))===id){
+        var row=btns[i].closest('div');
+        if(!row)return;
+        var orig=row.style.background||'';
+        row.style.transition='background 0.1s';
+        row.style.background='rgba(46,204,113,0.3)';
+        setTimeout(function(r,o){r.style.transition='background 0.7s';r.style.background=o;},150,row,orig);
+        setTimeout(function(r){r.style.transition='';},900,row);
+        return;
+      }
+    }
+  }
+
+  function wireInputs(){
+    ['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt'].forEach(function(id){
+      var el=gi(id); if(el) el.addEventListener('input',run);
+    });
+    var lt=getLoanSelect(); if(lt) lt.addEventListener('change',run);
+  }
+
+  function wirePanels(){
+    [['hdr-eq','body-eq','arr-eq'],['hdr-mo','body-mo','arr-mo'],['hdr-sv','body-sv','arr-sv']].forEach(function(p){
+      initToggle(p[0],p[1],p[2]);
+    });
+  }
+
   function init(){
     applyInputStyles();
     injectSavesUI();
-    initToggle('hdr-eq','body-eq','arr-eq');
-    initToggle('hdr-mo','body-mo','arr-mo');
-    // Fix scroll trap in Carrd sandbox embed
     document.addEventListener('touchmove',function(e){e.stopPropagation();},{passive:true});
+    wireInputs();
+    wirePanels();
     run();
-    var ids=['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt'];
-    for(var i=0;i<ids.length;i++){
-      var el=gi(ids[i]);if(el)el.addEventListener('input',run);
-    }
-    var lt=gi('loantype');if(lt)lt.addEventListener('change',run);
   }
 
   if(document.readyState==='loading'){
@@ -459,5 +562,4 @@
   } else {
     init();
   }
-  setTimeout(run,300);
 })();
