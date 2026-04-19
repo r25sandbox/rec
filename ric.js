@@ -1,5 +1,9 @@
 // ric.js — REI Calc external script
-// v4.7  2026-04-19  RESET to proven EEC pattern:
+// v4.8  2026-04-19  applyInputs: setAll() immediate + 150ms setTimeout re-apply —
+//                   Carrd resets input values after JS sets them; the delayed re-apply
+//                   wins the race. run() only called after the delay so it reads correct values.
+//                   // Commit: applyInputs delayed re-set to beat Carrd value reset
+// v4.7  2026-04-19  RESET to proven EEC pattern
 //                   wireInputs() simple forEach + addEventListener (no removeEventListener)
 //                   wirePanels() calls initToggle for all 3 panels
 //                   applyInputStyles() back to setAttribute (safe: wireInputs runs after)
@@ -226,11 +230,14 @@
   function applyInputs(inp,id){
     var map={price:'price',down:'down',rent:'rent',rate:'rate',appr:'appr',
              vac:'vacancy',taxes:'taxes',ins:'ins',maint:'maint',hoa:'hoa',mgmt:'mgmt'};
-    for(var k in map){var el=gi(map[k]);if(el)el.value=inp[k]!==undefined?inp[k]:0;}
-    var lt=getLoanSelect();if(lt)lt.value=inp.loantype||'30fixed';
+    function setAll(){
+      for(var k in map){var el=gi(map[k]);if(el)el.value=inp[k]!==undefined?inp[k]:0;}
+      var lt=getLoanSelect();if(lt)lt.value=inp.loantype||'30fixed';
+    }
+    setAll();
     activeId=id||null;
-    run();
-    renderSaves();
+    // Re-apply after brief delay — Carrd can reset input values after JS sets them
+    setTimeout(function(){setAll();run();renderSaves();},150);
   }
 
   // ── Active calculation tracking ──
