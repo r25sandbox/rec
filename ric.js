@@ -1,5 +1,11 @@
 // ric.js — REI Calc external script
-// v4.4  2026-04-19  Robust loantype select handling:
+// v4.5  2026-04-19  ROOT CAUSE FIX: applyInputStyles() was using setAttribute('style',...)
+//                   which rebuilds DOM elements and wipes all event listeners on every input.
+//                   Switched to individual el.style.X property assignments which mutate
+//                   the existing element in-place — listeners survive.
+//                   This fixes ALL inputs not triggering recalc, not just loantype.
+//                   // Commit: applyInputStyles use style properties not setAttribute
+// v4.4  2026-04-19  Robust loantype select handling
 //                   getLoanSelect() finds select via id, data-rid, or querySelector fallback
 //                   getLoanType() used everywhere instead of gi('loantype').value
 //                   data-rid="loantype" added to HTML select as backup attribute
@@ -183,9 +189,20 @@
   }
 
   function applyInputStyles(){
-    var s='width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box';
     var els=document.getElementsByClassName('ri');
-    for(var i=0;i<els.length;i++){els[i].setAttribute('style',s);}
+    for(var i=0;i<els.length;i++){
+      var el=els[i];
+      el.style.width='100%';
+      el.style.marginTop='4px';
+      el.style.padding='7px 8px';
+      el.style.background='#0d1b2e';
+      el.style.color='#ffffff';
+      el.style.border='1px solid #2a4a6b';
+      el.style.borderRadius='6px';
+      el.style.fontSize='12px';
+      el.style.fontFamily='inherit';
+      el.style.boxSizing='border-box';
+    }
   }
 
   // ── Saved calculations ──
