@@ -1,5 +1,11 @@
 // ric.js — REI Calc external script
-// v4.9  2026-04-19  applyInputs: ported exact EEC sv() pattern — explicit per-field
+// v4.10 2026-04-19  ROOT FIX for taxes/ins/maint not loading:
+//                   applyInputStyles() setAttribute() rebuilds inputs that have sibling
+//                   <br><font> hint elements — Carrd-specific DOM reconstruction bug.
+//                   Fix: remove class="ri" from taxes/ins/maint; style them inline in HTML.
+//                   applyInputStyles only runs on 8 inputs now (no hints); these 3 are safe.
+//                   // Commit: inline style taxes/ins/maint inputs - fix Load not restoring row 3
+// v4.9  2026-04-19  applyInputs EEC sv() pattern
 //                   assignments via sv(elId,v) helper (only sets if value defined).
 //                   No map loop, no setTimeout, matches proven EEC implementation.
 //                   // Commit: applyInputs EEC sv() pattern - explicit field assignments
