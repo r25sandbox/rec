@@ -1,9 +1,7 @@
 // eec.js — Equity Extraction Calculator
-// v1.8.6 | 2026-04-18 | Add savedLTV to save record; show in card row and PDF (replaces binding label)
-//                        Commit: LTV% in card row and PDF; drop "cash flow limited" label
-//                        binding label: "CF limit"→"cash flow limited", "80% LTV"→"LTV limited"
-//                        Commit: print label cleanup
-//                        force slider.value+updateSlider() after run() in applyInputs
+// v1.8.7 | 2026-04-19 | Green flash on active row after overwrite — visual save confirmation
+//                        Commit: overwrite save confirmation flash
+// v1.8.6 | 2026-04-18 | savedLTV in card row and PDF; plain English binding labels
 //                        Commit: fix slider restore on load — remove setTimeout re-run
 // v1.8.3 | 2026-04-18 | Save slider position as savedExtract; Load restores to savedExtract
 //                        fix applyInputs (remove renderSaves/scroll — click handler owns UI);
@@ -207,7 +205,26 @@
     arr[idx].newCF=res.newCF; arr[idx].binding=res.binding;
     arr[idx].loantype=inp.loantype; arr[idx].savedAt=new Date().toLocaleDateString();
     arr[idx].savedExtract=savedExtract; arr[idx].savedCF=savedCF; arr[idx].savedLTV=savedLTV;
-    writeSaves(arr); renderSaves();
+    writeSaves(arr); renderSaves(); flashRow(id);
+  }
+
+  // Brief green background flash on the saved row — fades out in 600ms
+  function flashRow(id){
+    var list=gi('eec-saves-list');
+    if(!list) return;
+    var divs=list.querySelectorAll('[data-act="overwrite"]');
+    for(var i=0;i<divs.length;i++){
+      if(divs[i].getAttribute('data-id')===String(id)){
+        var row=divs[i].closest('div[style]');
+        if(!row) return;
+        var orig=row.style.background||'';
+        row.style.transition='background 0.1s';
+        row.style.background='rgba(46,204,113,0.25)';
+        setTimeout(function(r,o){ r.style.background=o; r.style.transition='background 0.6s'; },120,row,orig);
+        setTimeout(function(r,o){ r.style.transition=''; },720,row,orig);
+        return;
+      }
+    }
   }
 
   // ── Export / Import ───────────────────────────────────────────────────────
