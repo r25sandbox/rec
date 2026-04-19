@@ -1,201 +1,71 @@
 // ric.js — REI Calc external script
-// v4.11 2026-04-19  Remove setTimeout(run,300) from init() — it fires after user clicks Load
-//                   and resets all display values back to DOM defaults, undoing the load.
-//                   Hint labels appeared correct because run() recalculates from reset DOM.
-//                   Same fix applied in EEC chat after identical symptom. run() on init
-//                   is sufficient — hardcoded defaults in run() handle Carrd's value reset.
-//                   // Commit: remove init setTimeout - was clobbering Load state
-// v4.10 2026-04-19  Inline style taxes/ins/maint - fix Load not restoring row 3
-//                   applyInputStyles() setAttribute() rebuilds inputs that have sibling
-//                   <br><font> hint elements — Carrd-specific DOM reconstruction bug.
-//                   Fix: remove class="ri" from taxes/ins/maint; style them inline in HTML.
-//                   applyInputStyles only runs on 8 inputs now (no hints); these 3 are safe.
-//                   // Commit: inline style taxes/ins/maint inputs - fix Load not restoring row 3
-// v4.9  2026-04-19  applyInputs EEC sv() pattern
-//                   assignments via sv(elId,v) helper (only sets if value defined).
-//                   No map loop, no setTimeout, matches proven EEC implementation.
-//                   // Commit: applyInputs EEC sv() pattern - explicit field assignments
-// v4.8  2026-04-19  applyInputs delayed re-set (superseded)
-//                   Carrd resets input values after JS sets them; the delayed re-apply
-//                   wins the race. run() only called after the delay so it reads correct values.
-//                   // Commit: applyInputs delayed re-set to beat Carrd value reset
-// v4.7  2026-04-19  RESET to proven EEC pattern
-//                   wireInputs() simple forEach + addEventListener (no removeEventListener)
-//                   wirePanels() calls initToggle for all 3 panels
-//                   applyInputStyles() back to setAttribute (safe: wireInputs runs after)
-//                   applyInputs() simple direct set + run() (no setTimeout)
-//                   initToggle ignores child button clicks via closest() check
-//                   // Commit: reset to EEC proven pattern - remove all complexity
-// v4.6  2026-04-19  applyInputs double-set (superseded)
-//                   to survive any Carrd DOM interference between set and run()
-//                   // Commit: applyInputs double-set for reliability
-// v4.5  2026-04-19  ROOT CAUSE FIX: applyInputStyles use style properties not setAttribute
-//                   which rebuilds DOM elements and wipes all event listeners on every input.
-//                   Switched to individual el.style.X property assignments which mutate
-//                   the existing element in-place — listeners survive.
-//                   This fixes ALL inputs not triggering recalc, not just loantype.
-//                   // Commit: applyInputStyles use style properties not setAttribute
-// v4.4  2026-04-19  Robust loantype select handling
-//                   getLoanSelect() finds select via id, data-rid, or querySelector fallback
-//                   getLoanType() used everywhere instead of gi('loantype').value
-//                   data-rid="loantype" added to HTML select as backup attribute
-//                   Document-level change delegation catches select even if id stripped
-//                   // Commit: robust loantype select - multi-fallback finder + delegation
-// v4.3  2026-04-19  loantype select styled in HTML not JS
-//                   with setAttribute, so listeners survive. Styled inline in HTML instead.
-//                   applyInputStyles() back to simple loop (select excluded by not having ri class)
-//                   // Commit: loantype select styled in HTML not JS - preserves listeners
-// v4.2  2026-04-19  loantype fix: applyInputStyles skips SELECT (superseded by v4.3)
-//                   setAttribute('style') rebuilds the element on some browsers,
-//                   wiping event listeners before they can be attached.
-//                   SELECT styled via individual style properties instead.
-//                   // Commit: fix loantype - dont setAttribute on select
-// v4.1  2026-04-19  Fix SAVED panel toggle + loantype change+input events
-//                   double-wiring caused dumb handler to fire before stopPropagation;
-//                   attachListeners() now solely owns all panel toggles via _toggled guard.
-//                   Fix loantype: added input event alongside change for Carrd compatibility.
-//                   // Commit: fix saved panel toggle + loantype change
-// v4.0  2026-04-19  Stability overhaul (informed by Equity Calc chat)
-//                   - attachListeners() with removeEventListener guards prevents duplicate handlers
-//                   - Panel toggles use _toggled guard; child button clicks don't collapse panel
-//                   - Single setTimeout(run,300) at init — Carrd DOM settling re-run
-//                     (multiple re-runs removed: they interfere with applyInputs/Load)
-//                   - loantype change reliably fires run() on all platforms
-//                   Green flash on overwrite save (ported from Equity Calc)
-//                   // Commit: stability overhaul + green flash on overwrite
-// v3.9  2026-04-17  PDF report: LTV and Down % added to inputs grid
-//                   // Commit: PDF LTV + Down % row
-// v3.8  2026-04-17  LTV/Down % fix: use span+textContent instead of nested font+set()
-//                   Carrd strips id from nested font tags; spans work reliably
-//                   // Commit: fix LTV Down dynamic update
-// v3.7  2026-04-17  LTV and Down % shown below Property Details
-//                   // Commit: LTV + Down % live display
-// v3.6  2026-04-13  Active calculation tracking: Load highlights row (gold left border,
-//                   "Active" badge); inline 💾 on active row overwrites without prompt;
-//                   general 💾 always creates new; activeId clears on new save or delete
-//                   // Commit: active calc tracking - highlight + inline overwrite save
-// v3.5  2026-04-12  Save button relocated to Property Details header
-//                   save-float-anchor moved from between panels to details panel header row
-//                   // Commit: save button in property details header
-// v3.4  2026-04-12  Save button float above Cash Flow; Mgmt flat $/mo fix; PDF loan type
-//                   Mgmt fixed: flat $/mo not % (regression fix from Session 1);
-//                   PDF: Mgmt shows $ amount, Loan type shown in inputs grid
-//                   // Commit: save btn float, mgmt dollar fix, PDF loan type
-// v3.3  2026-04-12  Panel title: "SAVED CALCULATIONS" → "SAVED: X" (live count)
-//                   // Commit: panel title shows save count
-// v3.2  2026-04-12  PDF card: navy bar removed entirely; white card with gold left border;
-//                   label + cash flow in single header row; bright green/red on white
-//                   // Commit: PDF card - no navy, gold left border, bright cash flow colors
-// v3.1  2026-04-12  Import fix: persistent hidden file input
-//                   avoids programmatic .click() blocked by mobile browsers
-//                   PDF card: navy top bar for label only; cash flow on white with
-//                   bright green/red; inputs on cream — navy appears once only
-//                   // Commit: fix import on mobile, fix PDF card colors
-// v3.0  2026-04-12  Import/Export + branded PDF report
-//                   Scroll fix: touch-action:pan-y + overscroll-behavior on outer div;
-//                   touchmove stopPropagation in init() for Carrd sandbox scroll trap
-//                   Control buttons: icons only, text labels removed (💾 🖨)
-//                   // Commit: scroll fix, icon-only buttons, cache bust
-// v2.8  2026-04-12  Saved panel moved to topmost position (above Cash Flow);
-//                   Save + Print All buttons merged into panel header row
-//                   // Commit: saved panel to top, save+print in header
-// v2.7  2026-04-12  Saved calculations feature:
-//                   - localStorage bookmarks (SAVES_KEY='rc_saves')
-//                   - Save prompts free-text label, snapshots all inputs + results
-//                   - Load restores all inputs + recalculates
-//                   - Delete per save
-//                   - Print one / Print all: Blob HTML → window.open → window.print()
-//                   - UI fully injected by JS via saved-panel-anchor div
-//                   // Commit: saved calculations - save, load, delete, print
-// v2.6  2026-04-12  Removed dpct (down payment %) display entirely —
-//                   persistent mobile alignment breaker across two sessions
-//                   // Commit: remove dpct
-// v2.5  2026-04-12  Label abbreviations: Purchase price→Price, Down payment→Down,
-//                   Monthly rent→Rent/mo, Interest rate→Interest, Appreciation→Appr.,
-//                   Annual taxes→Taxes/yr, Annual insurance→Insur./yr,
-//                   Annual maintenance→Maint./yr, Monthly HOA→HOA/mo, Loan term→Term(yrs)
-//                   // Commit: brutal label abbreviations for mobile alignment
-// v2.4  2026-04-12  Monthly Payment→Monthly Breakdown; Cash Flow panel one-line layout;
-//                   Term(yrs) number input→Loan dropdown (30yr Fixed / Interest Only);
-//                   IO calc: mpi=loan*mr, balance flat, equity via appreciation only
-//                   // Commit: monthly breakdown rename, one-line CF, loan dropdown
-// v2.3  2026-04-12  Saved calculations: localStorage bookmarks, load, delete, print one / print all
-//                   UI injected via JS (saves-anchor + saved-panel-anchor divs in HTML)
-//                   // Commit: saved calculations feature
-// v2.2  2026-04-11  Restored loan type dropdown (30yr fixed vs interest only);
-//                   loantype change listener added; term input removed;
-//                   cash flow panel one-line layout support
-//                   // Commit: restore loantype dropdown + IO calc logic
-// v2.1  2026-04-11  applyInputStyles(): styles all class="ri" inputs so HTML embed stays
-//                   under Carrd's ~10k char Code embed limit
-//                   // Commit: move input styles to JS to shrink embed
-// v2.0  2026-04-11  Restructured layout support:
-//                   - initToggle() for collapsible panels (addEventListener, Carrd-safe)
-//                   - Equity now 3Y/5Y/7Y (matches value projection periods)
-//                   - run() unchanged except e10→e7
-//                   // Commit: collapsible panels + 7Y equity
-// v1.x  2026-04-06  Initial external JS split, hardcoded defaults, setTimeout safety re-run
+// v5.0  2026-04-19  Clean rewrite matching EEC v1.8.7 pattern exactly.
+//                   No getLoanSelect, no data-rid, no run(inp), no setTimeout.
+//                   applyInputs uses sv() then run() — identical to EEC.
+//                   wireInputs uses forEach. initToggle ignores button clicks.
+//                   taxes/ins/maint styled inline in HTML (no class=ri) to
+//                   prevent setAttribute rebuilding hint-sibling inputs.
+//                   // Commit: v5.0 clean rewrite matching EEC pattern exactly
+
 (function(){
-  function gi(id){return document.getElementById(id);}
-  function gv(id){var el=gi(id);return el?parseFloat(el.value)||0:0;}
-  function fm(n){return '$'+Math.round(Math.abs(n)).toLocaleString();}
-  function fms(n){return(n<0?'-':'')+fm(n);}
-  function pc(n){return n.toFixed(2)+'%';}
-  function set(id,txt,col){var el=gi(id);if(!el)return;el.textContent=txt;if(col)el.color=col;}
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function gi(id){ return document.getElementById(id); }
+  function gv(id){ var el=gi(id); return el?parseFloat(el.value)||0:0; }
+  function gs(id){ var el=gi(id); return el?el.value:'30fixed'; }
+  function fm(n){ return '$'+Math.round(Math.abs(n)).toLocaleString(); }
+  function fms(n){ return (n<0?'-':'')+fm(n); }
+  function pc(n){ return n.toFixed(2)+'%'; }
+  function set(id,txt,col){ var el=gi(id); if(!el)return; el.textContent=txt; if(col)el.color=col; }
+  function escHtml(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function applyInputStyles(){
+    var s='width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;'+
+          'border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box';
+    var els=document.getElementsByClassName('ri');
+    for(var i=0;i<els.length;i++) els[i].setAttribute('style',s);
+  }
 
   function initToggle(hdrId,bodyId,arrId){
     var hdr=gi(hdrId),body=gi(bodyId),arr=gi(arrId);
-    if(!hdr||!body||!arr)return;
+    if(!hdr||!body||!arr) return;
     hdr.addEventListener('click',function(e){
-      if(e.target.closest('[data-act],[id^="btn-"],[id$="-btn"]'))return;
+      if(e.target.closest('[data-act],[id^="btn-"],[id$="-btn"]')) return;
       var open=body.style.display==='block';
       body.style.display=open?'none':'block';
       arr.textContent=open?'\u25B6':'\u25BC';
     });
   }
 
-  // Robust select finder — Carrd sometimes strips id from select elements
-  function getLoanSelect(){
-    return gi('loantype')
-      || document.querySelector('[data-rid="loantype"]')
-      || document.querySelector('select');
-  }
-  function getLoanType(){
-    var el=getLoanSelect(); return el?el.value:'30fixed';
-  }
-
-
+  // ── Equity calc ───────────────────────────────────────────────────────────
   function eqAt(yr,loan,mr,mpi,price,appr,io){
     var pv=price*Math.pow(1+appr/100,yr),bal=loan;
-    if(!io){
-      for(var m=0;m<yr*12;m++){var i=bal*mr;bal=Math.max(0,bal-(mpi-i));}
-    }
+    if(!io){ for(var m=0;m<yr*12;m++){var i=bal*mr;bal=Math.max(0,bal-(mpi-i));} }
     return{pv:pv,eq:pv-bal};
   }
 
+  // ── Run ───────────────────────────────────────────────────────────────────
   function run(){
     var price=gv('price'),down=gv('down'),rent=gv('rent'),rate=gv('rate'),appr=gv('appr'),
         vac=gv('vacancy'),taxes=gv('taxes'),ins=gv('ins'),maint=gv('maint'),
         hoa=gv('hoa'),mgmt=gv('mgmt');
-    var loantype=getLoanType();
-    if(!price){price=500000;down=100000;rent=3000;rate=6.5;appr=5;vac=5;taxes=3000;ins=1200;maint=1200;hoa=150;mgmt=0;}
+    var ltEl=gi('loantype'),loantype=ltEl?ltEl.value:'30fixed';
+    if(!price){price=500000;down=100000;rent=3000;rate=6.5;appr=5;vac=5;
+               taxes=3000;ins=1200;maint=1200;hoa=150;mgmt=0;loantype='30fixed';}
 
     set('th','\u2248 '+fm(taxes/12)+'/mo');
     set('ih','\u2248 '+fm(ins/12)+'/mo');
     set('mh','\u2248 '+fm(maint/12)+'/mo');
     var ltvEl=gi('ltv-pct'),downEl=gi('down-pct');
-    if(ltvEl&&price>0){ltvEl.textContent=Math.round((price-down)/price*100)+'%';}
-    if(downEl&&price>0){downEl.textContent=Math.round(down/price*100)+'%';}
+    if(ltvEl&&price>0) ltvEl.textContent=Math.round((price-down)/price*100)+'%';
+    if(downEl&&price>0) downEl.textContent=Math.round(down/price*100)+'%';
 
     var loan=Math.max(price-down,0),mr=rate/100/12,np=360,mpi=0;
     var io=loantype==='30io';
-    if(io){
-      mpi=loan*mr;
-    } else {
-      if(mr>0&&loan>0)mpi=loan*(mr*Math.pow(1+mr,np))/(Math.pow(1+mr,np)-1);
-    }
+    if(io){ mpi=loan*mr; }
+    else{ if(mr>0&&loan>0) mpi=loan*(mr*Math.pow(1+mr,np))/(Math.pow(1+mr,np)-1); }
 
-    var effRent=rent*(1-vac/100),mgmtFee=mgmt; // mgmt is flat $/mo
+    var effRent=rent*(1-vac/100),mgmtFee=mgmt;
     var totalExp=mpi+taxes/12+ins/12+maint/12+hoa+mgmtFee;
     var mcf=effRent-totalExp,coc=down>0?(mcf*12/down)*100:0;
 
@@ -206,59 +76,34 @@
 
     set('m1v',fms(mcf),mcf>=0?'#2ecc71':'#e74c3c');
     set('m1s',pc(coc)+' CoC');
-    set('m2v',fm(e3.eq));set('m2s',pc(cagr(e3,3))+' CAGR');
-    set('m3v',fm(e5.eq));set('m3s',pc(cagr(e5,5))+' CAGR');
-    set('m4v',fm(e7.eq));set('m4s',pc(cagr(e7,7))+' CAGR');
+    set('m2v',fm(e3.eq)); set('m2s',pc(cagr(e3,3))+' CAGR');
+    set('m3v',fm(e5.eq)); set('m3s',pc(cagr(e5,5))+' CAGR');
+    set('m4v',fm(e7.eq)); set('m4s',pc(cagr(e7,7))+' CAGR');
 
     set('p3',fm(price*Math.pow(1+appr/100,3)));
     set('p5',fm(price*Math.pow(1+appr/100,5)));
     set('p7',fm(price*Math.pow(1+appr/100,7)));
 
-    set('b1',fm(effRent));set('b1h',vac+'% vacancy applied');
-    set('b2',fm(mpi));set('b3',fm(taxes/12+ins/12));
-    set('b4',fm(maint/12));set('b5',fm(hoa+mgmtFee));set('b6',fm(totalExp));
+    set('b1',fm(effRent)); set('b1h',vac+'% vacancy applied');
+    set('b2',fm(mpi)); set('b3',fm(taxes/12+ins/12));
+    set('b4',fm(maint/12)); set('b5',fm(hoa+mgmtFee)); set('b6',fm(totalExp));
   }
 
-  function applyInputStyles(){
-    var s='width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box';
-    var els=document.getElementsByClassName('ri');
-    for(var i=0;i<els.length;i++){els[i].setAttribute('style',s);}
-  }
-
-  // ── Saved calculations ──
+  // ── Save / Load ───────────────────────────────────────────────────────────
   var SAVES_KEY='rc_saves';
-
-  function loadSaves(){
-    try{return JSON.parse(localStorage.getItem(SAVES_KEY)||'[]');}catch(e){return[];}
-  }
-  function writeSaves(arr){
-    try{localStorage.setItem(SAVES_KEY,JSON.stringify(arr));}catch(e){}
-  }
-
-  function currentInputs(){
-    return{
-      price:gv('price'),down:gv('down'),rent:gv('rent'),rate:gv('rate'),appr:gv('appr'),
-      vac:gv('vacancy'),taxes:gv('taxes'),ins:gv('ins'),maint:gv('maint'),
-      hoa:gv('hoa'),mgmt:gv('mgmt'),loantype:getLoanType()
-    };
-  }
-
-  function applyInputs(inp,id){
-    function sv(elId,v){var el=gi(elId);if(el&&v!==undefined&&v!==null)el.value=v;}
-    sv('price',inp.price); sv('down',inp.down); sv('rent',inp.rent);
-    sv('rate',inp.rate); sv('appr',inp.appr); sv('vacancy',inp.vac);
-    sv('taxes',inp.taxes); sv('ins',inp.ins); sv('maint',inp.maint);
-    sv('hoa',inp.hoa); sv('mgmt',inp.mgmt);
-    var lt=getLoanSelect(); if(lt&&inp.loantype) lt.value=inp.loantype;
-    activeId=id||null;
-    run();
-    renderSaves();
-  }
-
-  // ── Active calculation tracking ──
   var activeId=null;
 
-  function computeResults(inp){
+  function loadSaves(){ try{return JSON.parse(localStorage.getItem(SAVES_KEY)||'[]');}catch(e){return[];} }
+  function writeSaves(arr){ try{localStorage.setItem(SAVES_KEY,JSON.stringify(arr));}catch(e){} }
+
+  function currentInputs(){
+    var ltEl=gi('loantype');
+    return{price:gv('price'),down:gv('down'),rent:gv('rent'),rate:gv('rate'),appr:gv('appr'),
+           vac:gv('vacancy'),taxes:gv('taxes'),ins:gv('ins'),maint:gv('maint'),
+           hoa:gv('hoa'),mgmt:gv('mgmt'),loantype:ltEl?ltEl.value:'30fixed'};
+  }
+
+  function computeSnapshot(inp){
     var loan=Math.max(inp.price-inp.down,0),mr=inp.rate/100/12,np=360,mpi=0;
     var io=inp.loantype==='30io';
     if(io){mpi=loan*mr;}else{if(mr>0&&loan>0)mpi=loan*(mr*Math.pow(1+mr,np))/(Math.pow(1+mr,np)-1);}
@@ -270,91 +115,105 @@
     return{mcf:mcf,coc:coc,cagr3:cagr3};
   }
 
-  function saveCard(s,isActive){
-    var mcfCol=s.mcf>=0?'#2ecc71':'#e74c3c';
-    var ltLabel=s.loantype==='30io'?'IO':'Fixed';
-    var rowStyle=isActive
-      ?'border-top:1px solid #1e3a5f;padding:10px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;background:rgba(197,160,80,0.08);border-left:3px solid #c5a050;padding-left:8px;margin-left:-8px;border-radius:0 4px 4px 0'
-      :'border-top:1px solid #1e3a5f;padding:10px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px';
-    var loadBtn=isActive
-      ?'<span data-id="'+s.id+'" data-act="load" style="padding:4px 10px;background:#c5a050;color:#0d1b2e;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">Active</span>'
-      :'<span data-id="'+s.id+'" data-act="load" style="padding:4px 10px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">Load</span>';
-    var saveBtn=isActive
-      ?'<span data-id="'+s.id+'" data-act="overwrite" style="padding:4px 10px;background:#1e3a5f;color:#2ecc71;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">&#128190;</span>'
-      :'';
-    return '<div style="'+rowStyle+'">'
-      +'<div style="flex:1;min-width:0">'
-      +'<font color="#ffffff" style="font-size:12px;font-weight:600">'+escHtml(s.label)+'</font>'
-      +'<font color="#7a9bbf" style="font-size:10px"> &middot; '+ltLabel+'</font><br>'
-      +'<font color="'+mcfCol+'" style="font-size:11px;font-weight:700">'+fms(s.mcf)+'/mo</font>'
-      +'<font color="#7a9bbf" style="font-size:10px"> &middot; '+pc(s.coc)+' CoC'
-      +' &middot; '+pc(s.cagr3)+' CAGR@3Y</font>'
-      +'</div>'
-      +'<span style="display:flex;gap:6px;flex-shrink:0">'
-      +loadBtn
-      +saveBtn
-      +'<span data-id="'+s.id+'" data-act="print" style="padding:4px 10px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">&#128424;</span>'
-      +'<span data-id="'+s.id+'" data-act="del" style="padding:4px 10px;background:#1e3a5f;color:#e74c3c;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">&#10005;</span>'
-      +'</span>'
-      +'</div>';
-  }
-
-  function escHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-  function renderSaves(){
-    var arr=loadSaves();
-    var list=gi('saves-list');
-    if(!list)return;
-    var titleEl=gi('sv-title');
-    if(titleEl)titleEl.textContent='SAVED: '+arr.length;
-    if(!arr.length){
-      list.innerHTML='<font color="#7a9bbf" style="font-size:11px">No saved calculations yet.</font>';
-      return;
-    }
-    var html='';
-    for(var i=0;i<arr.length;i++)html+=saveCard(arr[i],arr[i].id===activeId);
-    list.innerHTML=html;
+  function applyInputs(inp,id){
+    function sv(elId,v){var el=gi(elId);if(el&&v!==undefined&&v!==null)el.value=v;}
+    sv('price',inp.price); sv('down',inp.down); sv('rent',inp.rent);
+    sv('rate',inp.rate); sv('appr',inp.appr); sv('vacancy',inp.vac);
+    sv('taxes',inp.taxes); sv('ins',inp.ins); sv('maint',inp.maint);
+    sv('hoa',inp.hoa); sv('mgmt',inp.mgmt);
+    var lt=gi('loantype'); if(lt&&inp.loantype) lt.value=inp.loantype;
+    activeId=id||null;
+    run();
+    renderSaves();
   }
 
   function doSave(){
     var label=prompt('Name this calculation (e.g. address or scenario):','');
-    if(!label||!label.trim())return;
+    if(!label||!label.trim()) return;
     var inp=currentInputs();
-    // compute results snapshot
-    var loan=Math.max(inp.price-inp.down,0),mr=inp.rate/100/12,np=360,mpi=0;
-    var io=inp.loantype==='30io';
-    if(io){mpi=loan*mr;}else{if(mr>0&&loan>0)mpi=loan*(mr*Math.pow(1+mr,np))/(Math.pow(1+mr,np)-1);}
-    var effRent=inp.rent*(1-inp.vac/100),mgmtFee=inp.mgmt; // mgmt flat $/mo
-    var totalExp=mpi+inp.taxes/12+inp.ins/12+inp.maint/12+inp.hoa+mgmtFee;
-    var mcf=effRent-totalExp,coc=inp.down>0?(mcf*12/inp.down)*100:0;
-    var e3=eqAt(3,loan,mr,mpi,inp.price,inp.appr,io);
-    var cagr3=inp.down>0&&e3.eq>0?(Math.pow(e3.eq/inp.down,1/3)-1)*100:0;
+    var snap=computeSnapshot(inp);
     var rec={id:Date.now(),label:label.trim(),savedAt:new Date().toLocaleDateString(),
-             mcf:mcf,coc:coc,cagr3:cagr3,loantype:inp.loantype,inp:inp};
-    var arr=loadSaves();
-    arr.unshift(rec);
-    writeSaves(arr);
-    activeId=null; // new save = no active edit session
-    // open saves panel
-    var body=gi('body-sv'),arr2=gi('arr-sv');
-    if(body){body.style.display='block';}
-    if(arr2){arr2.textContent='\u25BC';}
+             loantype:inp.loantype,inp:inp,mcf:snap.mcf,coc:snap.coc,cagr3:snap.cagr3};
+    var arr=loadSaves(); arr.unshift(rec); writeSaves(arr);
+    activeId=null;
     renderSaves();
+    var body=gi('body-sv'),arrEl=gi('arr-sv');
+    if(body&&body.style.display!=='block'){body.style.display='block';if(arrEl)arrEl.textContent='\u25BC';}
+  }
+
+  function doOverwrite(id){
+    var arr=loadSaves();
+    var idx=-1; for(var i=0;i<arr.length;i++){if(String(arr[i].id)===String(id)){idx=i;break;}}
+    if(idx<0) return;
+    var inp=currentInputs();
+    var snap=computeSnapshot(inp);
+    arr[idx].inp=inp; arr[idx].mcf=snap.mcf; arr[idx].coc=snap.coc; arr[idx].cagr3=snap.cagr3;
+    arr[idx].loantype=inp.loantype; arr[idx].savedAt=new Date().toLocaleDateString();
+    writeSaves(arr); renderSaves(); flashRow(id);
+  }
+
+  function flashRow(id){
+    var list=gi('saves-list'); if(!list) return;
+    var btns=list.querySelectorAll('[data-act="overwrite"]');
+    for(var i=0;i<btns.length;i++){
+      if(String(btns[i].getAttribute('data-id'))===String(id)){
+        var row=btns[i].closest('div'); if(!row) return;
+        var orig=row.style.background||'';
+        row.style.transition='background 0.1s';
+        row.style.background='rgba(46,204,113,0.25)';
+        setTimeout(function(r,o){r.style.transition='background 0.6s';r.style.background=o;},120,row,orig);
+        setTimeout(function(r){r.style.transition='';},720,row);
+        return;
+      }
+    }
+  }
+
+  function doExport(){
+    var arr=loadSaves();
+    if(!arr.length){alert('No saved calculations to export.');return;}
+    var blob=new Blob([JSON.stringify(arr,null,2)],{type:'application/json'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url; a.download='rei-calcs-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},10000);
+  }
+
+  function handleImportFile(file){
+    if(!file) return;
+    var reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        var imported=JSON.parse(e.target.result);
+        if(!Array.isArray(imported)) throw new Error('Invalid format');
+        var existing=loadSaves();
+        var existingIds=existing.map(function(s){return s.id;});
+        var merged=existing.slice(); var added=0;
+        for(var i=0;i<imported.length;i++){
+          if(existingIds.indexOf(imported[i].id)<0){merged.push(imported[i]);added++;}
+        }
+        writeSaves(merged); renderSaves();
+        var body=gi('body-sv'),arrEl=gi('arr-sv');
+        if(body){body.style.display='block';if(arrEl)arrEl.textContent='\u25BC';}
+        alert('Imported '+added+' calculation'+(added!==1?'s':'')+'. '+(merged.length-added)+' duplicate(s) skipped.');
+      }catch(err){alert('Import failed: '+err.message);}
+    };
+    reader.readAsText(file);
   }
 
   function printReport(ids){
     var all=loadSaves();
-    var items=ids?all.filter(function(s){return ids.indexOf(s.id)>=0;}):all;
-    if(!items.length)return;
+    var items=ids?all.filter(function(s){return ids.indexOf(String(s.id))>=0;}):all;
+    if(!items.length) return;
     var rows='';
     for(var i=0;i<items.length;i++){
       var s=items[i];
-      var mcfCol=s.mcf>=0?'#1a7a45':'#b91c1c';
+      var mcfCol=s.mcf>=0?'#16a34a':'#dc2626';
       var ltLabel=s.loantype==='30io'?'Interest Only':'30yr Fixed';
       rows+='<div style="background:#fff;border:1px solid #e0ddd8;border-left:4px solid #c5a050;border-radius:0 10px 10px 0;overflow:hidden;margin-bottom:24px;page-break-inside:avoid">'
         +'<div style="padding:14px 20px;border-bottom:1px solid #e8e5e0;display:flex;justify-content:space-between;align-items:center">'
         +'<div><div style="font-size:15px;font-weight:700;color:#0d1b2e">'+escHtml(s.label)+'</div>'
-        +'<div style="font-size:10px;color:#999;margin-top:2px;letter-spacing:.04em">'+ltLabel+' &middot; Saved '+s.savedAt+'</div></div>'
+        +'<div style="font-size:10px;color:#999;margin-top:2px">'+ltLabel+' &middot; Saved '+escHtml(s.savedAt)+'</div></div>'
         +'<div style="text-align:right"><div style="font-size:26px;font-weight:700;color:'+mcfCol+'">'+fms(s.mcf)+'/mo</div>'
         +'<div style="font-size:10px;color:#888">'+pc(s.coc)+' Cash-on-Cash</div></div>'
         +'</div>'
@@ -368,7 +227,7 @@
         +'<td style="padding:6px 8px;color:#888">Interest</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+s.inp.rate+'%</td>'
         +'<td style="padding:6px 8px;color:#888">Appr.</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+s.inp.appr+'%</td>'
         +'<td style="padding:6px 8px;color:#888">Vacancy</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+s.inp.vac+'%</td></tr>'
-        +'<tr>'
+        +'<tr style="border-bottom:1px solid #e8e5e0">'
         +'<td style="padding:6px 8px;color:#888">Taxes/yr</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.taxes)+'</td>'
         +'<td style="padding:6px 8px;color:#888">Insur./yr</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.ins)+'</td>'
         +'<td style="padding:6px 8px;color:#888">Maint./yr</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(s.inp.maint)+'</td></tr>'
@@ -382,30 +241,21 @@
         +'<td></td><td></td></tr>'
         +'</table></div></div>';
     }
-    var html='<!DOCTYPE html><html><head><meta charset="UTF-8">'
-      +'<title>REI Calc — Property Comparison</title>'
-      +'<style>'
-      +'*{box-sizing:border-box;margin:0;padding:0}'
-      +'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#fff;color:#0d1b2e;padding:32px;max-width:860px;margin:0 auto}'
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>REI Calc - Property Comparison</title>'
+      +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#fff;color:#0d1b2e;padding:32px;max-width:860px;margin:0 auto}'
       +'.page-hdr{display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;margin-bottom:28px;border-bottom:3px solid #0d1b2e}'
-      +'.brand{font-size:20px;font-weight:700;color:#0d1b2e;letter-spacing:-.01em}'
-      +'.brand span{color:#c5a050}'
+      +'.brand{font-size:20px;font-weight:700;color:#0d1b2e}.brand span{color:#c5a050}'
       +'.brand-sub{font-size:10px;color:#888;margin-top:3px;letter-spacing:.04em}'
       +'.page-date{font-size:11px;color:#888;text-align:right}'
-      +'.page-ftr{margin-top:28px;padding-top:14px;border-top:1px solid #ddd;display:flex;justify-content:space-between;align-items:center}'
+      +'.page-ftr{margin-top:28px;padding-top:14px;border-top:1px solid #ddd;display:flex;justify-content:space-between}'
       +'.page-ftr span{font-size:9px;color:#aaa}'
-      +'@media print{body{padding:16px}@page{margin:14mm}}'
-      +'</style></head><body>'
-      +'<div class="page-hdr">'
-      +'<div><div class="brand">Realty <span>25 AZ</span></div>'
+      +'@media print{body{padding:16px}@page{margin:14mm}}</style></head><body>'
+      +'<div class="page-hdr"><div><div class="brand">Realty <span>25 AZ</span></div>'
       +'<div class="brand-sub">ALIK LEVIN, BROKER &middot; 480.920.2273 &middot; REALTY25AZ.COM</div></div>'
       +'<div class="page-date"><strong style="font-size:13px">REI Property Comparison</strong><br>'+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})+'</div>'
-      +'</div>'
-      +rows
-      +'<div class="page-ftr">'
-      +'<span>Realty 25 AZ &middot; realty25az.com &middot; 480.920.2273</span>'
-      +'<span>For informational purposes only. Not financial or investment advice.</span>'
-      +'</div>'
+      +'</div>'+rows
+      +'<div class="page-ftr"><span>Realty 25 AZ &middot; realty25az.com &middot; 480.920.2273</span>'
+      +'<span>For informational purposes only. Not financial or investment advice.</span></div>'
       +'</body></html>';
     var blob=new Blob([html],{type:'text/html'});
     var url=URL.createObjectURL(blob);
@@ -415,98 +265,90 @@
     setTimeout(function(){URL.revokeObjectURL(url);},60000);
   }
 
-  // ── Import / Export ──
-  function doExport(){
+  function saveCard(s,isActive){
+    var mcfCol=s.mcf>=0?'#2ecc71':'#e74c3c';
+    var ltLabel=s.loantype==='30io'?'IO':'Fixed';
+    var rowStyle=isActive
+      ?'border-top:1px solid #1e3a5f;padding:10px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;background:rgba(197,160,80,0.08);border-left:3px solid #c5a050;padding-left:8px;margin-left:-8px'
+      :'border-top:1px solid #1e3a5f;padding:10px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px';
+    var loadBtn=isActive
+      ?'<span data-id="'+s.id+'" data-act="load" style="padding:4px 10px;background:#c5a050;color:#0d1b2e;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">Active</span>'
+      :'<span data-id="'+s.id+'" data-act="load" style="padding:4px 10px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">Load</span>';
+    var saveBtn=isActive
+      ?'<span data-id="'+s.id+'" data-act="overwrite" style="padding:4px 9px;background:#1e3a5f;color:#2ecc71;border-radius:4px;font-size:13px;cursor:pointer" title="Update save">&#128190;</span>'
+      :'';
+    return '<div style="'+rowStyle+'">'
+      +'<div style="flex:1;min-width:0">'
+      +'<font color="#ffffff" style="font-size:12px;font-weight:600">'+escHtml(s.label)+'</font>'
+      +'<font color="#7a9bbf" style="font-size:10px"> &middot; '+ltLabel+'</font><br>'
+      +'<font color="'+mcfCol+'" style="font-size:11px;font-weight:700">'+fms(s.mcf)+'/mo</font>'
+      +'<font color="#7a9bbf" style="font-size:10px"> &middot; '+pc(s.coc)+' CoC &middot; '+pc(s.cagr3)+' CAGR@3Y</font>'
+      +'</div>'
+      +'<span style="display:flex;gap:5px;flex-shrink:0">'
+      +loadBtn+saveBtn
+      +'<span data-id="'+s.id+'" data-act="print" style="padding:4px 9px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-size:13px;cursor:pointer">&#128424;</span>'
+      +'<span data-id="'+s.id+'" data-act="del" style="padding:4px 9px;background:#1e3a5f;color:#e74c3c;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">&#10005;</span>'
+      +'</span></div>';
+  }
+
+  function renderSaves(){
     var arr=loadSaves();
-    if(!arr.length){alert('No saved calculations to export.');return;}
-    var blob=new Blob([JSON.stringify(arr,null,2)],{type:'application/json'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');
-    a.href=url;a.download='rei-calcs-'+new Date().toISOString().slice(0,10)+'.json';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-    setTimeout(function(){URL.revokeObjectURL(url);},10000);
-  }
-
-  function doImport(){
-    var input=gi('import-file-input');
-    if(input)input.click();
-  }
-
-  function handleImportFile(file){
-    if(!file)return;
-    var reader=new FileReader();
-    reader.onload=function(e){
-      try{
-        var imported=JSON.parse(e.target.result);
-        if(!Array.isArray(imported))throw new Error('Invalid format');
-        var existing=loadSaves();
-        var existingIds=existing.map(function(s){return s.id;});
-        var merged=existing.slice();
-        var added=0;
-        for(var i=0;i<imported.length;i++){
-          if(existingIds.indexOf(imported[i].id)<0){merged.push(imported[i]);added++;}
-        }
-        writeSaves(merged);
-        renderSaves();
-        var body=gi('body-sv'),arr2=gi('arr-sv');
-        if(body)body.style.display='block';
-        if(arr2)arr2.textContent='\u25BC';
-        alert('Imported '+added+' calculation'+(added!==1?'s':'')+'. '+(merged.length-added)+' duplicate(s) skipped.');
-      }catch(err){alert('Import failed: '+err.message);}
-    };
-    reader.readAsText(file);
+    var list=gi('saves-list'); if(!list) return;
+    var titleEl=gi('sv-title');
+    if(titleEl) titleEl.textContent='SAVED: '+arr.length;
+    if(!arr.length){list.innerHTML='<font color="#7a9bbf" style="font-size:11px">No saved calculations yet.</font>';return;}
+    var html=''; for(var i=0;i<arr.length;i++) html+=saveCard(arr[i],String(arr[i].id)===String(activeId));
+    list.innerHTML=html;
   }
 
   function injectSavesUI(){
     var panelAnchor=gi('saved-panel-anchor');
     if(panelAnchor){
-      panelAnchor.innerHTML='<div style="background:#162236;border-radius:10px;margin-bottom:12px;overflow:hidden">'
+      panelAnchor.innerHTML=''
+        +'<input type="file" id="import-file-input" accept=".json,application/json" style="display:none">'
+        +'<div style="background:#162236;border-radius:10px;margin-bottom:12px;overflow:hidden">'
         +'<div id="hdr-sv" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">'
         +'<font id="sv-title" color="#ffffff" style="font-size:11px;font-weight:700;letter-spacing:.08em">SAVED: 0</font>'
         +'<span style="display:flex;align-items:center;gap:8px">'
         +'<span id="print-all-btn" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;line-height:1" title="Print all">&#128424;</span>'
-        +'<span id="btn-export" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;line-height:1" title="Export to file">&#11014;</span>'
-        +'<span id="btn-import" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;line-height:1" title="Import from file">&#11015;</span>'
+        +'<span id="btn-export" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;line-height:1" title="Export">&#11014;</span>'
+        +'<label for="import-file-input" style="font-size:14px;cursor:pointer;padding:3px 8px;background:#1e3a5f;color:#c5a050;border-radius:4px;line-height:1;display:inline-block" title="Import">&#11015;</label>'
         +'<font id="arr-sv" color="#7a9bbf" style="font-size:13px">&#9658;</font>'
         +'</span></div>'
         +'<div id="body-sv" style="display:none;padding:0 16px 16px">'
-        +'<input id="import-file-input" type="file" accept=".json,application/json" style="display:none">'
         +'<div id="saves-list"><font color="#7a9bbf" style="font-size:11px">No saved calculations yet.</font></div>'
         +'</div></div>';
-      // NOTE: toggle for hdr-sv is wired by attachListeners(), not here
+
+      initToggle('hdr-sv','body-sv','arr-sv');
       gi('print-all-btn').addEventListener('click',function(e){e.stopPropagation();printReport(null);});
       gi('btn-export').addEventListener('click',function(e){e.stopPropagation();doExport();});
-      gi('btn-import').addEventListener('click',function(e){e.stopPropagation();doImport();});
       gi('import-file-input').addEventListener('change',function(){handleImportFile(this.files[0]);this.value='';});
-      gi('saves-list').addEventListener('click',function(e){
-        var el=e.target.closest('[data-act]');
-        if(!el)return;
-        var id=parseInt(el.getAttribute('data-id'));
+
+      gi('body-sv').addEventListener('click',function(e){
+        var el=e.target.closest('[data-act]'); if(!el) return;
+        var id=el.getAttribute('data-id'); // keep as STRING
         var act=el.getAttribute('data-act');
         if(act==='load'){
           var arr=loadSaves();
-          var s=arr.filter(function(x){return x.id===id;})[0];
-          if(s)applyInputs(s.inp,s.id);
+          for(var k=0;k<arr.length;k++){
+            if(String(arr[k].id)===id){
+              applyInputs(arr[k].inp,arr[k].id);
+              break;
+            }
+          }
         } else if(act==='overwrite'){
-          var arr=loadSaves();
-          var idx=-1;for(var j=0;j<arr.length;j++){if(arr[j].id===id){idx=j;break;}}
-          if(idx<0)return;
-          var inp=currentInputs();
-          var res=computeResults(inp);
-          arr[idx].inp=inp;arr[idx].mcf=res.mcf;arr[idx].coc=res.coc;arr[idx].cagr3=res.cagr3;
-          arr[idx].loantype=inp.loantype;arr[idx].savedAt=new Date().toLocaleDateString();
-          writeSaves(arr);renderSaves();flashRow(id);
+          doOverwrite(id);
         } else if(act==='print'){
           printReport([id]);
         } else if(act==='del'){
-          if(id===activeId)activeId=null;
-          var arr2=loadSaves().filter(function(x){return x.id!==id;});
-          writeSaves(arr2);renderSaves();
+          if(String(activeId)===id) activeId=null;
+          writeSaves(loadSaves().filter(function(x){return String(x.id)!==id;}));
+          renderSaves();
         }
       });
       renderSaves();
     }
-    // Floating save button — top-right of calc area, above Cash Flow panel
+
     var floatAnchor=gi('save-float-anchor');
     if(floatAnchor){
       floatAnchor.innerHTML='<div style="text-align:right;margin-bottom:8px">'
@@ -516,36 +358,12 @@
     }
   }
 
-  // ── Flash row green after overwrite save ──
-  function flashRow(id){
-    var list=gi('saves-list');
-    if(!list)return;
-    var btns=list.querySelectorAll('[data-act="overwrite"]');
-    for(var i=0;i<btns.length;i++){
-      if(parseInt(btns[i].getAttribute('data-id'))===id){
-        var row=btns[i].closest('div');
-        if(!row)return;
-        var orig=row.style.background||'';
-        row.style.transition='background 0.1s';
-        row.style.background='rgba(46,204,113,0.3)';
-        setTimeout(function(r,o){r.style.transition='background 0.7s';r.style.background=o;},150,row,orig);
-        setTimeout(function(r){r.style.transition='';},900,row);
-        return;
-      }
-    }
-  }
-
+  // ── Wire + Init ───────────────────────────────────────────────────────────
   function wireInputs(){
     ['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt'].forEach(function(id){
       var el=gi(id); if(el) el.addEventListener('input',run);
     });
-    var lt=getLoanSelect(); if(lt) lt.addEventListener('change',run);
-  }
-
-  function wirePanels(){
-    [['hdr-eq','body-eq','arr-eq'],['hdr-mo','body-mo','arr-mo'],['hdr-sv','body-sv','arr-sv']].forEach(function(p){
-      initToggle(p[0],p[1],p[2]);
-    });
+    var lt=gi('loantype'); if(lt) lt.addEventListener('change',run);
   }
 
   function init(){
@@ -553,13 +371,12 @@
     injectSavesUI();
     document.addEventListener('touchmove',function(e){e.stopPropagation();},{passive:true});
     wireInputs();
-    wirePanels();
+    initToggle('hdr-eq','body-eq','arr-eq');
+    initToggle('hdr-mo','body-mo','arr-mo');
     run();
   }
 
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',init);
-  } else {
-    init();
-  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
+  else{init();}
+
 })();
