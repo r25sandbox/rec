@@ -1,19 +1,19 @@
 // eec.js — Equity Extraction Calculator
-// v1.6.0 | 2026-04-18 | UX polish matching RIC: save icon in panel header; white panel headers;
-//                        SAVED panel at top; print icon only (no "All" text); export/import JSON
-//                        Commit: UX consistency pass — match RIC save/print/export/import UI
-// v1.5.1 | 2026-04-18 | Print card: dual hero cash-out + cash flow
-// v1.5.0 | 2026-04-18 | Remove monthly breakdown; add Save/Load/Print
-// v1.4.0 | 2026-04-18 | Remove LOAD FROM REI CALC; math verified correct
-// v1.3.0 | 2026-04-18 | Collapsible panels; fix Load; fix loantype map; fix slider state
-// v1.2.0 | 2026-04-18 | Remove vacancy; remove 2x2 metric tiles
+// v1.7.0 | 2026-04-18 | Active row tracking (gold border, Active badge, inline overwrite 💾);
+//                        fix HOA/all-inputs save bug (|| default masks real 0 — use gvd());
+//                        export/import arrow icons thicker (↑↓ Unicode arrows);
+//                        Commit: active state, fix HOA/0-value save bug, arrow icons
+// v1.6.0 | 2026-04-18 | UX polish: save icon in header, white headers, SAVED at top, export/import
+// v1.5.1 | 2026-04-18 | Print card dual hero
+// v1.5.0 | 2026-04-18 | Save/Load/Print
 // v1.0.0 | 2026-04-18 | Initial build
 
 (function(){
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   function gi(id){ return document.getElementById(id); }
-  function gv(id){ var el=gi(id); return el ? parseFloat(el.value)||0 : 0; }
+  // gvd: get numeric value; returns raw parsed float (0 is valid, not replaced by default)
+  function gvd(id){ var el=gi(id); if(!el) return null; var v=parseFloat(el.value); return isNaN(v)?null:v; }
   function gs(id){ var el=gi(id); return el ? el.value : '30fixed'; }
   function fm(n){ return '$'+Math.round(Math.abs(n)).toLocaleString(); }
   function fms(n){ return (n>=0?'+':'-')+fm(n); }
@@ -52,19 +52,23 @@
 
   // ── Core calc ─────────────────────────────────────────────────────────────
   var _state = {};
+  var activeId = null;  // ID of currently-loaded save (null = fresh/unsaved)
 
   function currentInputs(){
+    // Use gvd() so 0 is preserved as 0, not replaced by a default
+    // Only use fallback if field is truly missing/NaN
+    function gvf(id, def){ var v=gvd(id); return v!==null?v:def; }
     return {
-      balance:  gv('balance')  || 320000,
-      propval:  gv('propval')  || 450000,
-      refirate: gv('refirate') || 6.75,
+      balance:  gvf('balance',  320000),
+      propval:  gvf('propval',  450000),
+      refirate: gvf('refirate', 6.75),
       loantype: gs('loantype') || '30fixed',
-      rent:     gv('rent')     || 2400,
-      taxes:    gv('taxes')    || 3600,
-      ins:      gv('ins')      || 1800,
-      hoa:      gv('hoa')      || 150,
-      mgmt:     gv('mgmt')     || 0,
-      maint:    gv('maint')    || 1200
+      rent:     gvf('rent',     2400),
+      taxes:    gvf('taxes',    3600),
+      ins:      gvf('ins',      1800),
+      hoa:      gvf('hoa',      0),      // default 0 — don't assume HOA exists
+      mgmt:     gvf('mgmt',     0),
+      maint:    gvf('maint',    1200)
     };
   }
 
@@ -162,19 +166,35 @@
     var res=computeResults(inp);
     var save={ id:Date.now(), label:label.trim(), savedAt:new Date().toLocaleDateString(),
                inp:inp, maxCashOut:res.maxCashOut, newCF:res.newCF, binding:res.binding };
-    var arr=loadSaves(); arr.unshift(save); writeSaves(arr); renderSaves();
-    // Expand panel
+    var arr=loadSaves(); arr.unshift(save);
+    writeSaves(arr);
+    activeId=null;  // new save — no longer editing an existing one
+    renderSaves();
     var body=gi('body-sv'), arr_el=gi('arr-sv');
     if(body&&body.style.display!=='block'){ body.style.display='block'; if(arr_el) arr_el.innerHTML='&#9660;'; }
   }
 
-  function applyInputs(inp){
-    function sv(id,v){ var el=gi(id); if(el&&v!==undefined) el.value=v; }
+  function doOverwrite(id){
+    var arr=loadSaves();
+    var idx=-1; for(var i=0;i<arr.length;i++){ if(arr[i].id===id){ idx=i; break; } }
+    if(idx<0) return;
+    var inp=currentInputs();
+    var res=computeResults(inp);
+    arr[idx].inp=inp; arr[idx].maxCashOut=res.maxCashOut;
+    arr[idx].newCF=res.newCF; arr[idx].binding=res.binding;
+    arr[idx].savedAt=new Date().toLocaleDateString();
+    writeSaves(arr); renderSaves();
+  }
+
+  function applyInputs(inp, id){
+    function sv(elId,v){ var el=gi(elId); if(el&&v!==undefined&&v!==null) el.value=v; }
     sv('balance',inp.balance); sv('propval',inp.propval); sv('refirate',inp.refirate);
     sv('rent',inp.rent); sv('taxes',inp.taxes); sv('ins',inp.ins);
     sv('hoa',inp.hoa); sv('mgmt',inp.mgmt); sv('maint',inp.maint);
     var lt=gi('loantype'); if(lt&&inp.loantype) lt.value=inp.loantype;
+    activeId = id || null;
     run();
+    renderSaves();
     var wrap=gi('eec-wrap'); if(wrap) wrap.scrollIntoView({behavior:'smooth',block:'start'});
   }
 
@@ -188,12 +208,6 @@
     a.href=url; a.download='eec-scenarios-'+new Date().toISOString().slice(0,10)+'.json';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function(){ URL.revokeObjectURL(url); },10000);
-  }
-
-  function doImport(){
-    // Use the persistent hidden file input in the DOM (avoids mobile popup-blocked .click())
-    var inp=gi('eec-import-input');
-    if(inp) inp.click();
   }
 
   function handleImportFile(file){
@@ -279,10 +293,19 @@
   }
 
   // ── Save card ─────────────────────────────────────────────────────────────
-  function saveCard(s){
+  function saveCard(s, isActive){
     var cfCol=s.newCF>=0?'#2ecc71':'#e74c3c';
     var ltLabel=s.inp&&s.inp.loantype==='30io'?'IO':'Fixed';
-    return '<div style="border-top:1px solid #1e3a5f;padding:10px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">'
+    var rowStyle=isActive
+      ? 'border-top:1px solid #1e3a5f;padding:10px 0 10px 10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;border-left:3px solid #c5a050;background:rgba(197,160,80,0.07);margin-left:-2px'
+      : 'border-top:1px solid #1e3a5f;padding:10px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px';
+    var loadBtn=isActive
+      ? '<span data-id="'+s.id+'" data-act="load" style="padding:4px 10px;background:#c5a050;color:#0d1b2e;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">Active</span>'
+      : '<span data-id="'+s.id+'" data-act="load" style="padding:4px 10px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">Load</span>';
+    var overwriteBtn=isActive
+      ? '<span data-id="'+s.id+'" data-act="overwrite" style="padding:4px 9px;background:#1e3a5f;color:#2ecc71;border-radius:4px;font-size:13px;cursor:pointer" title="Update save">&#128190;</span>'
+      : '';
+    return '<div style="'+rowStyle+'">'
       +'<div style="flex:1;min-width:0">'
       +'<font color="#ffffff" style="font-size:12px;font-weight:600">'+escHtml(s.label)+'</font>'
       +' <font color="#7a9bbf" style="font-size:9px">&#183; '+ltLabel+'</font><br>'
@@ -290,7 +313,8 @@
       +' <font color="#7a9bbf" style="font-size:10px">&#183; '+fm(s.maxCashOut)+' out</font>'
       +'</div>'
       +'<span style="display:flex;gap:5px;flex-shrink:0">'
-      +'<span data-id="'+s.id+'" data-act="load" style="padding:4px 10px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">Load</span>'
+      +loadBtn
+      +overwriteBtn
       +'<span data-id="'+s.id+'" data-act="print" style="padding:4px 9px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-size:13px;cursor:pointer" title="Print">&#128424;</span>'
       +'<span data-id="'+s.id+'" data-act="del" style="padding:4px 9px;background:#1e3a5f;color:#e74c3c;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer" title="Delete">&#10005;</span>'
       +'</span>'
@@ -307,28 +331,26 @@
       list.innerHTML='<font color="#7a9bbf" style="font-size:11px">No saved scenarios yet.</font>';
       return;
     }
-    var html=''; for(var i=0;i<arr.length;i++) html+=saveCard(arr[i]);
+    var html=''; for(var i=0;i<arr.length;i++) html+=saveCard(arr[i], arr[i].id===activeId);
     list.innerHTML=html;
   }
 
   // ── Inject saves UI ───────────────────────────────────────────────────────
   function injectSavesUI(){
-    // SAVED panel — injected at top anchor
     var panelAnchor=gi('eec-saves-panel-anchor');
     if(panelAnchor){
       panelAnchor.innerHTML=''
-        // Hidden file input for import (persistent in DOM — avoids mobile .click() block)
         +'<input type="file" id="eec-import-input" accept=".json,application/json" style="display:none">'
         +'<div style="background:#162236;border-radius:10px;margin-bottom:12px;overflow:hidden">'
         +'<div id="hdr-sv" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">'
         +'<font id="eec-saves-count" color="#ffffff" style="font-size:11px;font-weight:700;letter-spacing:.08em">SAVED: 0</font>'
         +'<span style="display:flex;align-items:center;gap:8px">'
-        // Print all — icon only
+        // Print all icon only
         +'<span id="eec-print-all" style="font-size:14px;cursor:pointer;padding:3px 7px;background:#1e3a5f;color:#c5a050;border-radius:4px" title="Print all">&#128424;</span>'
-        // Export
-        +'<span id="eec-btn-export" style="font-size:12px;cursor:pointer;padding:3px 7px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-weight:700" title="Export JSON">&#8593;</span>'
-        // Import
-        +'<label for="eec-import-input" id="eec-btn-import" style="font-size:12px;cursor:pointer;padding:3px 7px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-weight:700;display:inline-block" title="Import JSON">&#8595;</label>'
+        // Export — thick up arrow ⬆
+        +'<span id="eec-btn-export" style="font-size:15px;cursor:pointer;padding:2px 7px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-weight:900;line-height:1.4" title="Export JSON">&#11014;</span>'
+        // Import — thick down arrow ⬇ via label
+        +'<label for="eec-import-input" style="font-size:15px;cursor:pointer;padding:2px 7px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-weight:900;line-height:1.4;display:inline-block" title="Import JSON">&#11015;</label>'
         +'<font id="arr-sv" color="#7a9bbf" style="font-size:13px">&#9658;</font>'
         +'</span></div>'
         +'<div id="body-sv" style="display:none;padding:0 16px 16px">'
@@ -336,7 +358,6 @@
         +'</div></div>';
 
       initToggle('hdr-sv','body-sv','arr-sv');
-
       gi('eec-print-all').addEventListener('click', function(e){ e.stopPropagation(); printReport(null); });
       gi('eec-btn-export').addEventListener('click', function(e){ e.stopPropagation(); doExport(); });
       gi('eec-import-input').addEventListener('change', function(){ handleImportFile(this.files[0]); this.value=''; });
@@ -347,10 +368,13 @@
         var id=parseInt(el.getAttribute('data-id'));
         var act=el.getAttribute('data-act');
         if(act==='load'){
-          var arr=loadSaves(); for(var k=0;k<arr.length;k++){ if(arr[k].id===id){ applyInputs(arr[k].inp); break; } }
+          var arr=loadSaves(); for(var k=0;k<arr.length;k++){ if(arr[k].id===id){ applyInputs(arr[k].inp,arr[k].id); break; } }
+        } else if(act==='overwrite'){
+          doOverwrite(id);
         } else if(act==='print'){
           printReport([id]);
         } else if(act==='del'){
+          if(id===activeId) activeId=null;
           writeSaves(loadSaves().filter(function(x){ return x.id!==id; })); renderSaves();
         }
       });
@@ -358,7 +382,7 @@
       renderSaves();
     }
 
-    // 💾 Save icon — injected into PROPERTY & REFI panel header
+    // 💾 Save icon in PROPERTY & REFI header
     var saveAnchor=gi('eec-save-btn-anchor');
     if(saveAnchor){
       saveAnchor.innerHTML='<span id="eec-btn-save" style="display:inline-block;font-size:18px;cursor:pointer;padding:3px 9px;background:#c5a050;color:#0d1b2e;border-radius:6px;line-height:1.3" title="Save scenario">&#128190;</span>';
