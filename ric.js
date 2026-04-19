@@ -1,5 +1,12 @@
 // ric.js — REI Calc external script
-// v5.2  2026-04-19  Console screenshot revealed: input DOM .value = 3618 correct, but
+// v5.3  2026-04-19  ROOT CAUSE FOUND: Both REI Calc and Equity Calc are on the same
+//                   Carrd page. They share id="taxes", "ins", "maint", "hoa", "mgmt".
+//                   document.getElementById returned EEC's element (first in DOM),
+//                   not RIC's. Fix: scope all gi() calls to #ric-wrap container via
+//                   querySelector. HTML outer div now has id="ric-wrap".
+//                   Event delegation also scoped to wrap.
+//                   // Commit: scope getElementById to ric-wrap - fix id collision with EEC
+// v5.2  2026-04-19  sv() triple-set + delegation fallback
 //                   textbox visually showed 3000 (HTML default). Fix sv() to set all three:
 //                   .value (property), .defaultValue (attribute backing), setAttribute('value').
 //                   Also added document-level event delegation as fallback for listeners
@@ -11,7 +18,18 @@
 (function(){
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  function gi(id){ return document.getElementById(id); }
+  // Scoped lookup — only finds elements inside RIC wrap, avoids collision with
+  // Equity Calc on same Carrd page (both use id="taxes", "ins", "maint", etc.)
+  var _wrap=null;
+  function getWrap(){ if(!_wrap) _wrap=document.getElementById('ric-wrap'); return _wrap; }
+  function gi(id){
+    var w=getWrap();
+    if(w){
+      var el=w.querySelector('#'+id);
+      if(el) return el;
+    }
+    return document.getElementById(id); // fallback
+  }
   function gv(id){ var el=gi(id); return el?parseFloat(el.value)||0:0; }
   function gs(id){ var el=gi(id); return el?el.value:'30fixed'; }
   function fm(n){ return '$'+Math.round(Math.abs(n)).toLocaleString(); }
@@ -374,14 +392,17 @@
     });
     var lt=gi('loantype'); if(lt) lt.addEventListener('change',run);
 
-    // Document-level delegation (fallback) — catches events even if Carrd rebuilds elements
-    var inputIds=['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt'];
-    document.addEventListener('input',function(e){
-      if(e.target&&inputIds.indexOf(e.target.id)>=0) run();
-    });
-    document.addEventListener('change',function(e){
-      if(e.target&&e.target.id==='loantype') run();
-    });
+    // Delegation on RIC wrap only — NOT document (avoids catching EEC events)
+    var wrap=getWrap();
+    if(wrap){
+      var inputIds=['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt'];
+      wrap.addEventListener('input',function(e){
+        if(e.target&&inputIds.indexOf(e.target.id)>=0) run();
+      });
+      wrap.addEventListener('change',function(e){
+        if(e.target&&e.target.id==='loantype') run();
+      });
+    }
   }
 
   function init(){
