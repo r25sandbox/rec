@@ -1,7 +1,9 @@
 // eec.js — Equity Extraction Calculator
-// v1.8.2 | 2026-04-18 | Load sets slider to saved maxCashOut — working area matches row display
-//                        Commit: load restores slider to maxCashOut position
-// v1.8.1 | 2026-04-18 | Fix parseInt ID corruption; clean applyInputs; reset slider on load
+// v1.8.3 | 2026-04-18 | Save slider position as savedExtract; Load restores to savedExtract;
+//                        card shows CF+extraction at savedExtract, not at maxCashOut
+//                        Commit: save/load slider position — WYSIWYG
+// v1.8.2 | 2026-04-18 | Load sets slider to maxCashOut — partial fix
+// v1.8.1 | 2026-04-18 | Fix parseInt ID corruption; clean applyInputs
 //                        fix applyInputs (remove renderSaves/scroll — click handler owns UI);
 //                        reset slider to 0 on load for clean predictable state;
 //                        add ?v=18 cache-bust in HTML
@@ -150,11 +152,17 @@
     if(!label||!label.trim()) return;
     var inp=currentInputs();
     var res=computeResults(inp);
+    // Capture current slider position as the saved working state
+    var sl=gi('slider');
+    var savedExtract=sl?parseFloat(sl.value)||0:0;
+    var savedLoan=inp.balance+savedExtract;
+    var savedPmt=calcPmt(savedLoan,inp.refirate,inp.loantype);
+    var savedCF=res.effRent-res.fixedExp-savedPmt;
     var rec={
       id:Date.now(), label:label.trim(), savedAt:new Date().toLocaleDateString(),
-      loantype:inp.loantype,
-      inp:inp,
-      maxCashOut:res.maxCashOut, newCF:res.newCF, binding:res.binding
+      loantype:inp.loantype, inp:inp,
+      maxCashOut:res.maxCashOut, newCF:res.newCF, binding:res.binding,
+      savedExtract:savedExtract, savedCF:savedCF
     };
     var arr=loadSaves(); arr.unshift(rec); writeSaves(arr);
     activeId=null;
@@ -187,10 +195,15 @@
     if(idx<0) return;
     var inp=currentInputs();
     var res=computeResults(inp);
+    var sl=gi('slider');
+    var savedExtract=sl?parseFloat(sl.value)||0:0;
+    var savedLoan=inp.balance+savedExtract;
+    var savedPmt=calcPmt(savedLoan,inp.refirate,inp.loantype);
+    var savedCF=res.effRent-res.fixedExp-savedPmt;
     arr[idx].inp=inp; arr[idx].maxCashOut=res.maxCashOut;
     arr[idx].newCF=res.newCF; arr[idx].binding=res.binding;
-    arr[idx].loantype=inp.loantype;
-    arr[idx].savedAt=new Date().toLocaleDateString();
+    arr[idx].loantype=inp.loantype; arr[idx].savedAt=new Date().toLocaleDateString();
+    arr[idx].savedExtract=savedExtract; arr[idx].savedCF=savedCF;
     writeSaves(arr); renderSaves();
   }
 
@@ -289,7 +302,10 @@
 
   // ── Save card (RIC pattern) ───────────────────────────────────────────────
   function saveCard(s,isActive){
-    var cfCol=s.newCF>=0?'#2ecc71':'#e74c3c';
+    // Display what was saved at the slider position, fall back to maxCashOut for old saves
+    var dispExtract = s.savedExtract!==undefined ? s.savedExtract : s.maxCashOut;
+    var dispCF      = s.savedCF!==undefined      ? s.savedCF      : s.newCF;
+    var cfCol=dispCF>=0?'#2ecc71':'#e74c3c';
     var ltLabel=s.loantype==='30io'?'IO':'Fixed';
     var rowStyle=isActive
       ?'border-top:1px solid #1e3a5f;padding:10px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;background:rgba(197,160,80,0.08);border-left:3px solid #c5a050;padding-left:8px;margin-left:-8px'
@@ -304,8 +320,8 @@
       +'<div style="flex:1;min-width:0">'
       +'<font color="#ffffff" style="font-size:12px;font-weight:600">'+escHtml(s.label)+'</font>'
       +'<font color="#7a9bbf" style="font-size:10px"> &#183; '+ltLabel+'</font><br>'
-      +'<font color="'+cfCol+'" style="font-size:11px;font-weight:700">'+fms(s.newCF)+'/mo</font>'
-      +'<font color="#7a9bbf" style="font-size:10px"> &#183; '+fm(s.maxCashOut)+' max out</font>'
+      +'<font color="'+cfCol+'" style="font-size:11px;font-weight:700">'+fms(dispCF)+'/mo</font>'
+      +'<font color="#7a9bbf" style="font-size:10px"> &#183; '+fm(dispExtract)+' out</font>'
       +'</div>'
       +'<span style="display:flex;gap:5px;flex-shrink:0">'
       +loadBtn+saveBtn
@@ -359,7 +375,7 @@
           var arr=loadSaves();
           for(var k=0;k<arr.length;k++){
             if(String(arr[k].id)===id){
-              applyInputs(arr[k].inp, arr[k].id, arr[k].maxCashOut);
+              applyInputs(arr[k].inp, arr[k].id, arr[k].savedExtract||0);
               renderSaves();
               var wrap=gi('eec-wrap'); if(wrap) wrap.scrollIntoView({behavior:'smooth',block:'start'});
               break;
