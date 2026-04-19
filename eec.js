@@ -1,11 +1,9 @@
 // eec.js — Equity Extraction Calculator
-// v1.3.0 | 2026-04-18 | Collapsible breakdown+RIC panels; fix Load (s.inp not s.inputs);
-//                        fix loantype '30fix'→'30fixed' mapping; fix effRent vacancy remnant;
-//                        fix slider math (was computing on stale state before run() completed)
-//                        Commit: collapsible panels, fix Load bug, fix loantype map, fix math
+// v1.4.0 | 2026-04-18 | Remove LOAD FROM REI CALC (UI + JS); math verified correct
+//                        Commit: rm RIC load feature; math confirmed via spot-check
+// v1.3.0 | 2026-04-18 | Collapsible panels; fix Load bug; fix loantype mapping; fix slider state
 // v1.2.0 | 2026-04-18 | Remove vacancy; remove 2x2 metric tiles
-// v1.1.1 | 2026-04-18 | Save card: replace RIC mcf/CoC with rent/mo
-// v1.1.0 | 2026-04-18 | 3-col compact inputs; remove slider breakdown; load RIC saves
+// v1.1.x | 2026-04-18 | Compact inputs; slider; save card fixes
 // v1.0.0 | 2026-04-18 | Initial build
 
 (function(){
@@ -49,7 +47,7 @@
   }
 
   // ── Core calc ─────────────────────────────────────────────────────────────
-  var _state = {};  // single authoritative state object
+  var _state = {};
 
   function run(){
     var balance  = gv('balance')  || 320000;
@@ -63,14 +61,12 @@
     var mgmt     = gv('mgmt')     || 0;
     var maint    = gv('maint')    || 1200;
 
-    // Gross rent used directly — no vacancy adjustment
-    var effRent     = rent;
-    var taxIns      = (taxes+ins)/12;
-    var hoaMgmtMaint= hoa + mgmt + maint/12;
-    var fixedExp    = taxIns + hoaMgmtMaint;
-    var incomeAvail = effRent - fixedExp;
+    var effRent      = rent;
+    var taxIns       = (taxes+ins)/12;
+    var hoaMgmtMaint = hoa + mgmt + maint/12;
+    var fixedExp     = taxIns + hoaMgmtMaint;
+    var incomeAvail  = effRent - fixedExp;
 
-    // Max loan: smaller of 80% LTV cap and cash-flow breakeven loan
     var maxLoanLTV = propval * 0.80;
     var mr = refirate/100/12;
     var maxLoanCF;
@@ -84,27 +80,25 @@
       maxLoanCF = incomeAvail/ppd;
     }
 
-    var maxNewLoan  = Math.max(Math.min(maxLoanLTV, maxLoanCF), 0);
-    var maxCashOut  = Math.max(maxNewLoan - balance, 0);
-    var newPmt      = calcPmt(maxNewLoan, refirate, loanType);
-    var newCF       = effRent - fixedExp - newPmt;
-    var ltv         = propval>0 ? (balance/propval*100) : 0;
-    var binding     = (maxLoanCF<=maxLoanLTV && maxLoanCF>=0) ? 'cash flow limit' : '80% LTV cap';
+    var maxNewLoan = Math.max(Math.min(maxLoanLTV, maxLoanCF), 0);
+    var maxCashOut = Math.max(maxNewLoan - balance, 0);
+    var newPmt     = calcPmt(maxNewLoan, refirate, loanType);
+    var newCF      = effRent - fixedExp - newPmt;
+    var binding    = (maxLoanCF<=maxLoanLTV && maxLoanCF>=0) ? 'cash flow limit' : '80% LTV cap';
     if(maxCashOut===0) binding='no cash-out available';
 
-    // Store state for slider (must be set BEFORE updateSlider)
     _state = {
       effRent:effRent, fixedExp:fixedExp, refirate:refirate,
       loanType:loanType, balance:balance, maxCashOut:maxCashOut,
       propval:propval, taxIns:taxIns, hoaMgmtMaint:hoaMgmtMaint,
-      newPmt:newPmt, newCF:newCF, maxNewLoan:maxNewLoan, binding:binding
+      newPmt:newPmt, newCF:newCF
     };
 
-    // Monthly breakdown (at max cash-out)
+    // Monthly breakdown
     setTxt('br-rent', fm(effRent));
-    setTxt('br-pmt',  '−'+fm(newPmt));
-    setTxt('br-ti',   '−'+fm(taxIns));
-    setTxt('br-hm',   '−'+fm(hoaMgmtMaint));
+    setTxt('br-pmt',  '&#8722;'+fm(newPmt));
+    setTxt('br-ti',   '&#8722;'+fm(taxIns));
+    setTxt('br-hm',   '&#8722;'+fm(hoaMgmtMaint));
     setTxt('br-cf',   fms(newCF));
     setColor('br-cf', newCF>=0?'#2ecc71':'#e74c3c');
 
@@ -122,7 +116,7 @@
   // ── Slider ────────────────────────────────────────────────────────────────
   function updateSlider(){
     var s=_state;
-    if(!s || !s.refirate) return;
+    if(!s||!s.refirate) return;
     var sliderEl=gi('slider');
     if(!sliderEl) return;
     var extract=parseFloat(sliderEl.value)||0;
@@ -145,95 +139,16 @@
     var statusEl=gi('slider-status');
     if(statusEl){
       if(newLoan>ltv80){
-        statusEl.innerHTML='&#9888; Exceeds 80% LTV — lender approval unlikely';
+        statusEl.innerHTML='&#9888; Exceeds 80% LTV &#8212; lender approval unlikely';
         statusEl.color='#e74c3c';
       } else if(cf>=0){
         statusEl.innerHTML='&#10003; Cash flow positive at this extraction';
         statusEl.color='#2ecc71';
       } else {
-        statusEl.innerHTML='&#10007; Cash flow negative — reduce extraction';
+        statusEl.innerHTML='&#10007; Cash flow negative &#8212; reduce extraction';
         statusEl.color='#e74c3c';
       }
     }
-  }
-
-  // ── RIC saves ─────────────────────────────────────────────────────────────
-  function loadRicSaves(){
-    try{ var r=localStorage.getItem('rc_saves'); return r?JSON.parse(r):[]; }
-    catch(e){ return []; }
-  }
-
-  function setVal(id,val){
-    var el=gi(id);
-    if(el !== null && val !== undefined){ el.value=val; }
-  }
-
-  // Map RIC loantype strings to EEC strings
-  function mapLoanType(lt){
-    if(!lt) return '30fixed';
-    if(lt==='30io' || lt==='io') return '30io';
-    // '30fix', '30fixed', 'fixed', or anything else → 30fixed
-    return '30fixed';
-  }
-
-  function populateFromRic(save){
-    // RIC stores inputs under save.inp (NOT save.inputs)
-    var inp = save.inp || save.inputs || {};
-    setVal('rent',  inp.rent);
-    setVal('taxes', inp.taxes);
-    setVal('ins',   inp.ins);
-    setVal('hoa',   inp.hoa);
-    setVal('mgmt',  inp.mgmt);
-    setVal('maint', inp.maint);
-    // Loan type — normalize across RIC/RentalComp variants
-    var ltEl=gi('loantype');
-    if(ltEl) ltEl.value = mapLoanType(save.loantype || inp.loantype);
-    // balance + propval intentionally left untouched — must reflect current state
-    run();
-    var wrap=gi('eec-wrap');
-    if(wrap) wrap.scrollIntoView({behavior:'smooth', block:'start'});
-  }
-
-  function escHtml(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-  function renderRicSaves(){
-    var arr=loadRicSaves();
-    var countEl=gi('ric-count');
-    var listEl=gi('ric-saves-list');
-    if(!listEl) return;
-    if(!arr.length){
-      if(countEl) countEl.innerHTML='none found';
-      listEl.innerHTML='<font color="#4a6a8a" style="font-size:11px">No REI Calc saves in this browser.</font>';
-      return;
-    }
-    if(countEl) countEl.innerHTML=arr.length+' saved';
-    var html='';
-    for(var i=0;i<arr.length;i++){
-      var s=arr[i];
-      var inp=s.inp||s.inputs||{};
-      var ltLabel=mapLoanType(s.loantype||inp.loantype)==='30io'?'IO':'Fixed';
-      var rentStr=inp.rent ? fm(inp.rent)+'/mo rent' : '—';
-      html+='<div style="border-top:1px solid #1e3a5f;padding:9px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">'
-        +'<div style="flex:1;min-width:0">'
-        +'<font color="#ffffff" style="font-size:12px;font-weight:600">'+escHtml(s.label)+'</font>'
-        +' <font color="#7a9bbf" style="font-size:9px">&#183; '+ltLabel+'</font><br>'
-        +'<font color="#7a9bbf" style="font-size:10px">'+rentStr+'</font>'
-        +'</div>'
-        +'<span data-rid="'+s.id+'" style="padding:4px 12px;background:#1e3a5f;color:#c5a050;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">Load</span>'
-        +'</div>';
-    }
-    listEl.innerHTML=html;
-    // Wire load buttons via delegation
-    listEl.addEventListener('click', function(e){
-      var btn=e.target.closest('[data-rid]');
-      if(!btn) return;
-      var id=btn.getAttribute('data-rid');
-      var saves=loadRicSaves();
-      for(var k=0;k<saves.length;k++){
-        // id can be numeric (RIC) or string (RentalComp) — compare loosely
-        if(String(saves[k].id)===String(id)){ populateFromRic(saves[k]); break; }
-      }
-    });
   }
 
   // ── Wire events ───────────────────────────────────────────────────────────
@@ -252,12 +167,9 @@
   function init(){
     applyInputStyles();
     wireInputs();
-    // Collapsible panels
     initToggle('hdr-breakdown','body-breakdown','arr-breakdown');
-    initToggle('hdr-ric','body-ric','arr-ric');
     run();
-    renderRicSaves();
-    setTimeout(function(){ run(); renderRicSaves(); }, 300);
+    setTimeout(run, 300);
   }
 
   if(document.readyState==='loading'){
