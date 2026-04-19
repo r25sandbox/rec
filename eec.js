@@ -1,5 +1,6 @@
 // eec.js — Equity Extraction Calculator
-// v1.8.5 | 2026-04-18 | Print: "max cash-out"→"extracted"; "CF at max extraction"→"cash flow";
+// v1.8.6 | 2026-04-18 | Add savedLTV to save record; show in card row and PDF (replaces binding label)
+//                        Commit: LTV% in card row and PDF; drop "cash flow limited" label
 //                        binding label: "CF limit"→"cash flow limited", "80% LTV"→"LTV limited"
 //                        Commit: print label cleanup
 //                        force slider.value+updateSlider() after run() in applyInputs
@@ -159,11 +160,12 @@
     var savedLoan=inp.balance+savedExtract;
     var savedPmt=calcPmt(savedLoan,inp.refirate,inp.loantype);
     var savedCF=res.effRent-res.fixedExp-savedPmt;
+    var savedLTV=inp.propval>0?Math.round(savedLoan/inp.propval*100):0;
     var rec={
       id:Date.now(), label:label.trim(), savedAt:new Date().toLocaleDateString(),
       loantype:inp.loantype, inp:inp,
       maxCashOut:res.maxCashOut, newCF:res.newCF, binding:res.binding,
-      savedExtract:savedExtract, savedCF:savedCF
+      savedExtract:savedExtract, savedCF:savedCF, savedLTV:savedLTV
     };
     var arr=loadSaves(); arr.unshift(rec); writeSaves(arr);
     activeId=null;
@@ -200,10 +202,11 @@
     var savedLoan=inp.balance+savedExtract;
     var savedPmt=calcPmt(savedLoan,inp.refirate,inp.loantype);
     var savedCF=res.effRent-res.fixedExp-savedPmt;
+    var savedLTV=inp.propval>0?Math.round(savedLoan/inp.propval*100):0;
     arr[idx].inp=inp; arr[idx].maxCashOut=res.maxCashOut;
     arr[idx].newCF=res.newCF; arr[idx].binding=res.binding;
     arr[idx].loantype=inp.loantype; arr[idx].savedAt=new Date().toLocaleDateString();
-    arr[idx].savedExtract=savedExtract; arr[idx].savedCF=savedCF;
+    arr[idx].savedExtract=savedExtract; arr[idx].savedCF=savedCF; arr[idx].savedLTV=savedLTV;
     writeSaves(arr); renderSaves();
   }
 
@@ -256,7 +259,7 @@
       rows+='<div style="border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:20px;page-break-inside:avoid">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">'
         +'<div><h2 style="margin:0;font-size:16px;color:#0d1b2e">'+escHtml(s.label)+'</h2>'
-        +'<p style="margin:3px 0 0;font-size:11px;color:#64748b">Saved '+escHtml(s.savedAt)+' &middot; '+ltLabel+' &middot; '+escHtml(s.binding)+'</p></div>'
+        +'<p style="margin:3px 0 0;font-size:11px;color:#64748b">Saved '+escHtml(s.savedAt)+' &middot; '+ltLabel+(s.savedLTV!==undefined?' &middot; '+s.savedLTV+'% LTV':'')+'</p></div>'
         +'<div style="display:flex;gap:20px;flex-shrink:0">'
         +'<div style="text-align:right;border-right:1px solid #e2e8f0;padding-right:20px">'
         +'<div style="font-size:22px;font-weight:700;color:#0d1b2e">'+fm(dispExtract)+'</div>'
@@ -323,7 +326,8 @@
       +'<font color="#ffffff" style="font-size:12px;font-weight:600">'+escHtml(s.label)+'</font>'
       +'<font color="#7a9bbf" style="font-size:10px"> &#183; '+ltLabel+'</font><br>'
       +'<font color="'+cfCol+'" style="font-size:11px;font-weight:700">'+fms(dispCF)+'/mo</font>'
-      +'<font color="#7a9bbf" style="font-size:10px"> &#183; '+fm(dispExtract)+' out</font>'
+      +'<font color="#7a9bbf" style="font-size:10px"> &#183; '+fm(dispExtract)+' out'
+      +(s.savedLTV!==undefined?' &#183; '+s.savedLTV+'% LTV':'')+'</font>'
       +'</div>'
       +'<span style="display:flex;gap:5px;flex-shrink:0">'
       +loadBtn+saveBtn
