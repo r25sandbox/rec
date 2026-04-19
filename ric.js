@@ -1,11 +1,11 @@
 // ric.js — REI Calc external script
-// v5.0  2026-04-19  Clean rewrite matching EEC v1.8.7 pattern exactly.
-//                   No getLoanSelect, no data-rid, no run(inp), no setTimeout.
-//                   applyInputs uses sv() then run() — identical to EEC.
-//                   wireInputs uses forEach. initToggle ignores button clicks.
-//                   taxes/ins/maint styled inline in HTML (no class=ri) to
-//                   prevent setAttribute rebuilding hint-sibling inputs.
-//                   // Commit: v5.0 clean rewrite matching EEC pattern exactly
+// v5.1  2026-04-19  Fix input visual display on Load: sv() now sets BOTH el.value
+//                   (DOM property) AND el.setAttribute('value', v) (HTML attribute).
+//                   Diagnosis via console: property was set correctly (run() read 3618)
+//                   but attribute stayed at HTML default (input showed 3000). Some browsers
+//                   render the attribute, not the property. Setting both forces visual refresh.
+//                   // Commit: sv() sets both value property and attribute for visual refresh
+// v5.0  2026-04-19  Clean rewrite matching EEC pattern exactly
 
 (function(){
 
@@ -116,7 +116,13 @@
   }
 
   function applyInputs(inp,id){
-    function sv(elId,v){var el=gi(elId);if(el&&v!==undefined&&v!==null)el.value=v;}
+    function sv(elId,v){
+      var el=gi(elId);
+      if(el&&v!==undefined&&v!==null){
+        el.value=v;
+        el.setAttribute('value',v); // force visual refresh — property alone doesn't update display
+      }
+    }
     sv('price',inp.price); sv('down',inp.down); sv('rent',inp.rent);
     sv('rate',inp.rate); sv('appr',inp.appr); sv('vacancy',inp.vac);
     sv('taxes',inp.taxes); sv('ins',inp.ins); sv('maint',inp.maint);
