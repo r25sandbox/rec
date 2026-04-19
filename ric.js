@@ -1,5 +1,11 @@
 // ric.js — REI Calc external script
-// v4.3  2026-04-19  loantype select: removed class="ri" from HTML — JS never touches it
+// v4.4  2026-04-19  Robust loantype select handling:
+//                   getLoanSelect() finds select via id, data-rid, or querySelector fallback
+//                   getLoanType() used everywhere instead of gi('loantype').value
+//                   data-rid="loantype" added to HTML select as backup attribute
+//                   Document-level change delegation catches select even if id stripped
+//                   // Commit: robust loantype select - multi-fallback finder + delegation
+// v4.3  2026-04-19  loantype select styled in HTML not JS
 //                   with setAttribute, so listeners survive. Styled inline in HTML instead.
 //                   applyInputStyles() back to simple loop (select excluded by not having ri class)
 //                   // Commit: loantype select styled in HTML not JS - preserves listeners
@@ -111,6 +117,17 @@
     });
   }
 
+  // Robust select finder — Carrd sometimes strips id from select elements
+  function getLoanSelect(){
+    return gi('loantype')
+      || document.querySelector('[data-rid="loantype"]')
+      || document.querySelector('select');
+  }
+  function getLoanType(){
+    var el=getLoanSelect(); return el?el.value:'30fixed';
+  }
+
+
   function eqAt(yr,loan,mr,mpi,price,appr,io){
     var pv=price*Math.pow(1+appr/100,yr),bal=loan;
     if(!io){
@@ -123,7 +140,7 @@
     var price=gv('price'),down=gv('down'),rent=gv('rent'),rate=gv('rate'),appr=gv('appr'),
         vac=gv('vacancy'),taxes=gv('taxes'),ins=gv('ins'),maint=gv('maint'),
         hoa=gv('hoa'),mgmt=gv('mgmt');
-    var ltEl=gi('loantype'),loantype=ltEl?ltEl.value:'30fixed';
+    var loantype=getLoanType();
     if(!price){price=500000;down=100000;rent=3000;rate=6.5;appr=5;vac=5;taxes=3000;ins=1200;maint=1200;hoa=150;mgmt=0;}
 
     set('th','\u2248 '+fm(taxes/12)+'/mo');
@@ -182,11 +199,10 @@
   }
 
   function currentInputs(){
-    var ltEl=gi('loantype');
     return{
       price:gv('price'),down:gv('down'),rent:gv('rent'),rate:gv('rate'),appr:gv('appr'),
       vac:gv('vacancy'),taxes:gv('taxes'),ins:gv('ins'),maint:gv('maint'),
-      hoa:gv('hoa'),mgmt:gv('mgmt'),loantype:ltEl?ltEl.value:'30fixed'
+      hoa:gv('hoa'),mgmt:gv('mgmt'),loantype:getLoanType()
     };
   }
 
@@ -194,7 +210,7 @@
     var map={price:'price',down:'down',rent:'rent',rate:'rate',appr:'appr',
              vac:'vacancy',taxes:'taxes',ins:'ins',maint:'maint',hoa:'hoa',mgmt:'mgmt'};
     for(var k in map){var el=gi(map[k]);if(el)el.value=inp[k]||0;}
-    var lt=gi('loantype');if(lt)lt.value=inp.loantype||'30fixed';
+    var lt=getLoanSelect();if(lt)lt.value=inp.loantype||'30fixed';
     activeId=id||null;
     run();
     renderSaves();
@@ -490,8 +506,8 @@
         el.addEventListener('input',run);
       }
     }
-    // Loan type — wire both change and input for cross-browser/Carrd compatibility
-    var lt=gi('loantype');
+    // Loan type — wire via robust finder + document-level delegation as fallback
+    var lt=getLoanSelect();
     if(lt){
       lt.removeEventListener('change',run);
       lt.removeEventListener('input',run);
@@ -523,9 +539,16 @@
     applyInputStyles();
     injectSavesUI();
     document.addEventListener('touchmove',function(e){e.stopPropagation();},{passive:true});
+    // Document-level delegation for loantype — works even if id stripped by Carrd
+    document.addEventListener('change',function(e){
+      var el=e.target;
+      if(el.tagName==='SELECT'&&(el.id==='loantype'||el.getAttribute('data-rid')==='loantype')){
+        run();
+      }
+    });
     attachListeners();
     run();
-    setTimeout(run,300); // single Carrd DOM-settling safety re-run
+    setTimeout(run,300);
   }
 
   if(document.readyState==='loading'){
