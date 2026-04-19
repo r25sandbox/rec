@@ -1,5 +1,13 @@
 // ric.js — REI Calc external script
-// v3.9  2026-04-17  PDF report: LTV and Down % added to inputs grid (highlighted row)
+// v4.0  2026-04-19  Stability overhaul (informed by Equity Calc chat):
+//                   - attachListeners() with removeEventListener guards prevents duplicate handlers
+//                   - Panel toggles use _toggled guard; child button clicks don't collapse panel
+//                   - Single setTimeout(run,300) at init — Carrd DOM settling re-run
+//                     (multiple re-runs removed: they interfere with applyInputs/Load)
+//                   - loantype change reliably fires run() on all platforms
+//                   Green flash on overwrite save (ported from Equity Calc)
+//                   // Commit: stability overhaul + green flash on overwrite
+// v3.9  2026-04-17  PDF report: LTV and Down % added to inputs grid
 //                   // Commit: PDF LTV + Down % row
 // v3.8  2026-04-17  LTV/Down % fix: use span+textContent instead of nested font+set()
 //                   Carrd strips id from nested font tags; spans work reliably
@@ -418,7 +426,7 @@
           var res=computeResults(inp);
           arr[idx].inp=inp;arr[idx].mcf=res.mcf;arr[idx].coc=res.coc;arr[idx].cagr3=res.cagr3;
           arr[idx].loantype=inp.loantype;arr[idx].savedAt=new Date().toLocaleDateString();
-          writeSaves(arr);renderSaves();
+          writeSaves(arr);renderSaves();flashRow(id);
         } else if(act==='print'){
           printReport([id]);
         } else if(act==='del'){
@@ -439,19 +447,69 @@
     }
   }
 
+  // ── Flash row green after overwrite save ──
+  function flashRow(id){
+    var list=gi('saves-list');
+    if(!list)return;
+    var btns=list.querySelectorAll('[data-act="overwrite"]');
+    for(var i=0;i<btns.length;i++){
+      if(parseInt(btns[i].getAttribute('data-id'))===id){
+        var row=btns[i].closest('div');
+        if(!row)return;
+        var orig=row.style.background||'';
+        row.style.transition='background 0.1s';
+        row.style.background='rgba(46,204,113,0.3)';
+        setTimeout(function(r,o){r.style.transition='background 0.7s';r.style.background=o;},150,row,orig);
+        setTimeout(function(r){r.style.transition='';},900,row);
+        return;
+      }
+    }
+  }
+
+  function attachListeners(){
+    // Input listeners
+    var ids=['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt'];
+    for(var i=0;i<ids.length;i++){
+      var el=gi(ids[i]);
+      if(el){
+        el.removeEventListener('input',run); // prevent duplicates
+        el.addEventListener('input',run);
+      }
+    }
+    // Loan type — change event
+    var lt=gi('loantype');
+    if(lt){
+      lt.removeEventListener('change',run);
+      lt.addEventListener('change',run);
+    }
+    // Collapsible panels — use the header click directly
+    var panels=[['hdr-eq','body-eq','arr-eq'],['hdr-mo','body-mo','arr-mo'],['hdr-sv','body-sv','arr-sv']];
+    for(var p=0;p<panels.length;p++){
+      (function(hId,bId,aId){
+        var hdr=gi(hId);
+        if(!hdr||hdr._toggled)return; // skip if already wired
+        hdr._toggled=true;
+        hdr.addEventListener('click',function(e){
+          // Ignore clicks on child buttons inside the header
+          if(e.target.closest('[data-act]')||e.target.id==='btn-save'||
+             e.target.id==='print-all-btn'||e.target.id==='btn-export'||e.target.id==='btn-import')return;
+          var body=gi(bId),arr=gi(aId);
+          if(!body)return;
+          var open=body.style.display==='block';
+          body.style.display=open?'none':'block';
+          if(arr)arr.textContent=open?'\u25B6':'\u25BC';
+        });
+      })(panels[p][0],panels[p][1],panels[p][2]);
+    }
+  }
+
   function init(){
     applyInputStyles();
     injectSavesUI();
-    initToggle('hdr-eq','body-eq','arr-eq');
-    initToggle('hdr-mo','body-mo','arr-mo');
-    // Fix scroll trap in Carrd sandbox embed
     document.addEventListener('touchmove',function(e){e.stopPropagation();},{passive:true});
+    attachListeners();
     run();
-    var ids=['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt'];
-    for(var i=0;i<ids.length;i++){
-      var el=gi(ids[i]);if(el)el.addEventListener('input',run);
-    }
-    var lt=gi('loantype');if(lt)lt.addEventListener('change',run);
+    setTimeout(run,300); // single Carrd DOM-settling safety re-run
   }
 
   if(document.readyState==='loading'){
@@ -459,5 +517,4 @@
   } else {
     init();
   }
-  setTimeout(run,300);
 })();
