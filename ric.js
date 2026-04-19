@@ -1,5 +1,15 @@
 // ric.js — REI Calc external script
-// v4.5  2026-04-19  ROOT CAUSE FIX: applyInputStyles() was using setAttribute('style',...)
+// v4.7  2026-04-19  RESET to proven EEC pattern:
+//                   wireInputs() simple forEach + addEventListener (no removeEventListener)
+//                   wirePanels() calls initToggle for all 3 panels
+//                   applyInputStyles() back to setAttribute (safe: wireInputs runs after)
+//                   applyInputs() simple direct set + run() (no setTimeout)
+//                   initToggle ignores child button clicks via closest() check
+//                   // Commit: reset to EEC proven pattern - remove all complexity
+// v4.6  2026-04-19  applyInputs double-set (superseded)
+//                   to survive any Carrd DOM interference between set and run()
+//                   // Commit: applyInputs double-set for reliability
+// v4.5  2026-04-19  ROOT CAUSE FIX: applyInputStyles use style properties not setAttribute
 //                   which rebuilds DOM elements and wipes all event listeners on every input.
 //                   Switched to individual el.style.X property assignments which mutate
 //                   the existing element in-place — listeners survive.
@@ -116,7 +126,8 @@
   function initToggle(hdrId,bodyId,arrId){
     var hdr=gi(hdrId),body=gi(bodyId),arr=gi(arrId);
     if(!hdr||!body||!arr)return;
-    hdr.addEventListener('click',function(){
+    hdr.addEventListener('click',function(e){
+      if(e.target.closest('[data-act],[id^="btn-"],[id$="-btn"]'))return;
       var open=body.style.display==='block';
       body.style.display=open?'none':'block';
       arr.textContent=open?'\u25B6':'\u25BC';
@@ -189,20 +200,9 @@
   }
 
   function applyInputStyles(){
+    var s='width:100%;margin-top:4px;padding:7px 8px;background:#0d1b2e;color:#ffffff;border:1px solid #2a4a6b;border-radius:6px;font-size:12px;font-family:inherit;box-sizing:border-box';
     var els=document.getElementsByClassName('ri');
-    for(var i=0;i<els.length;i++){
-      var el=els[i];
-      el.style.width='100%';
-      el.style.marginTop='4px';
-      el.style.padding='7px 8px';
-      el.style.background='#0d1b2e';
-      el.style.color='#ffffff';
-      el.style.border='1px solid #2a4a6b';
-      el.style.borderRadius='6px';
-      el.style.fontSize='12px';
-      el.style.fontFamily='inherit';
-      el.style.boxSizing='border-box';
-    }
+    for(var i=0;i<els.length;i++){els[i].setAttribute('style',s);}
   }
 
   // ── Saved calculations ──
@@ -226,7 +226,7 @@
   function applyInputs(inp,id){
     var map={price:'price',down:'down',rent:'rent',rate:'rate',appr:'appr',
              vac:'vacancy',taxes:'taxes',ins:'ins',maint:'maint',hoa:'hoa',mgmt:'mgmt'};
-    for(var k in map){var el=gi(map[k]);if(el)el.value=inp[k]||0;}
+    for(var k in map){var el=gi(map[k]);if(el)el.value=inp[k]!==undefined?inp[k]:0;}
     var lt=getLoanSelect();if(lt)lt.value=inp.loantype||'30fixed';
     activeId=id||null;
     run();
@@ -513,57 +513,25 @@
     }
   }
 
-  function attachListeners(){
-    // Input listeners
-    var ids=['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt'];
-    for(var i=0;i<ids.length;i++){
-      var el=gi(ids[i]);
-      if(el){
-        el.removeEventListener('input',run); // prevent duplicates
-        el.addEventListener('input',run);
-      }
-    }
-    // Loan type — wire via robust finder + document-level delegation as fallback
-    var lt=getLoanSelect();
-    if(lt){
-      lt.removeEventListener('change',run);
-      lt.removeEventListener('input',run);
-      lt.addEventListener('change',run);
-      lt.addEventListener('input',run);
-    }
-    // Collapsible panels — use the header click directly
-    var panels=[['hdr-eq','body-eq','arr-eq'],['hdr-mo','body-mo','arr-mo'],['hdr-sv','body-sv','arr-sv']];
-    for(var p=0;p<panels.length;p++){
-      (function(hId,bId,aId){
-        var hdr=gi(hId);
-        if(!hdr||hdr._toggled)return; // skip if already wired
-        hdr._toggled=true;
-        hdr.addEventListener('click',function(e){
-          // Ignore clicks on child buttons inside the header
-          if(e.target.closest('[data-act]')||e.target.id==='btn-save'||
-             e.target.id==='print-all-btn'||e.target.id==='btn-export'||e.target.id==='btn-import')return;
-          var body=gi(bId),arr=gi(aId);
-          if(!body)return;
-          var open=body.style.display==='block';
-          body.style.display=open?'none':'block';
-          if(arr)arr.textContent=open?'\u25B6':'\u25BC';
-        });
-      })(panels[p][0],panels[p][1],panels[p][2]);
-    }
+  function wireInputs(){
+    ['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt'].forEach(function(id){
+      var el=gi(id); if(el) el.addEventListener('input',run);
+    });
+    var lt=getLoanSelect(); if(lt) lt.addEventListener('change',run);
+  }
+
+  function wirePanels(){
+    [['hdr-eq','body-eq','arr-eq'],['hdr-mo','body-mo','arr-mo'],['hdr-sv','body-sv','arr-sv']].forEach(function(p){
+      initToggle(p[0],p[1],p[2]);
+    });
   }
 
   function init(){
     applyInputStyles();
     injectSavesUI();
     document.addEventListener('touchmove',function(e){e.stopPropagation();},{passive:true});
-    // Document-level delegation for loantype — works even if id stripped by Carrd
-    document.addEventListener('change',function(e){
-      var el=e.target;
-      if(el.tagName==='SELECT'&&(el.id==='loantype'||el.getAttribute('data-rid')==='loantype')){
-        run();
-      }
-    });
-    attachListeners();
+    wireInputs();
+    wirePanels();
     run();
     setTimeout(run,300);
   }
