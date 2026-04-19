@@ -1,8 +1,7 @@
 // eec.js — Equity Extraction Calculator
+// v1.5.1 | 2026-04-18 | Print card: cash-out elevated to hero number equal to cash flow
+//                        Commit: print card dual hero — max cash-out + cash flow side by side
 // v1.5.0 | 2026-04-18 | Remove monthly breakdown panel; add Save/Load/Print matching RIC pattern
-//                        localStorage key: eec_saves; save card: label · max cash-out · [Load][🖨][✕]
-//                        print: Blob URL → window.open → print(); download fallback if popup blocked
-//                        Commit: rm breakdown panel; add save/load/print (RIC-style)
 // v1.4.0 | 2026-04-18 | Remove LOAD FROM REI CALC; math verified correct
 // v1.3.0 | 2026-04-18 | Collapsible panels; fix Load bug; fix loantype mapping; fix slider state
 // v1.2.0 | 2026-04-18 | Remove vacancy; remove 2x2 metric tiles
@@ -224,22 +223,25 @@
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">'
         +'<div><h2 style="margin:0;font-size:16px;color:#0d1b2e">'+escHtml(s.label)+'</h2>'
         +'<p style="margin:3px 0 0;font-size:11px;color:#64748b">Saved '+escHtml(s.savedAt)+' &middot; '+ltLabel+' &middot; '+escHtml(s.binding)+'</p></div>'
+        +'<div style="display:flex;gap:20px;flex-shrink:0">'
+        +'<div style="text-align:right;border-right:1px solid #e2e8f0;padding-right:20px">'
+        +'<div style="font-size:22px;font-weight:700;color:#0d1b2e">'+fm(s.maxCashOut)+'</div>'
+        +'<div style="font-size:11px;color:#64748b">max cash-out</div></div>'
         +'<div style="text-align:right">'
         +'<div style="font-size:22px;font-weight:700;color:'+cfCol+'">'+fms(s.newCF)+'/mo</div>'
-        +'<div style="font-size:11px;color:#64748b">cash flow after refi</div></div></div>'
+        +'<div style="font-size:11px;color:#64748b">cash flow after refi</div></div>'
+        +'</div></div>'
         +'<table style="width:100%;border-collapse:collapse;font-size:12px">'
-        +'<tr><td style="padding:5px 8px;color:#555;width:40%">Max cash-out</td>'
-        +'<td style="padding:5px 8px;font-weight:600">'+fm(s.maxCashOut)+'</td>'
-        +'<td style="padding:5px 8px;color:#555;width:30%">Loan balance</td>'
-        +'<td style="padding:5px 8px;font-weight:600">'+fm(inp.balance)+'</td></tr>'
-        +'<tr style="background:#f8fafc"><td style="padding:5px 8px;color:#555">Property value</td>'
-        +'<td style="padding:5px 8px;font-weight:600">'+fm(inp.propval)+'</td>'
-        +'<td style="padding:5px 8px;color:#555">Refi rate</td>'
-        +'<td style="padding:5px 8px;font-weight:600">'+inp.refirate+'%</td></tr>'
-        +'<tr><td style="padding:5px 8px;color:#555">Gross rent</td>'
-        +'<td style="padding:5px 8px;font-weight:600">'+fm(inp.rent)+'/mo</td>'
-        +'<td style="padding:5px 8px;color:#555">Taxes + ins</td>'
-        +'<td style="padding:5px 8px;font-weight:600">'+fm((inp.taxes+inp.ins)/12)+'/mo</td></tr>'
+        +'<tr><td style="padding:5px 8px;color:#555;width:40%">Loan balance</td>'
+        +'<td style="padding:5px 8px;font-weight:600">'+fm(inp.balance)+'</td>'
+        +'<td style="padding:5px 8px;color:#555;width:30%">Property value</td>'
+        +'<td style="padding:5px 8px;font-weight:600">'+fm(inp.propval)+'</td></tr>'
+        +'<tr style="background:#f8fafc"><td style="padding:5px 8px;color:#555">Refi rate</td>'
+        +'<td style="padding:5px 8px;font-weight:600">'+inp.refirate+'%</td>'
+        +'<td style="padding:5px 8px;color:#555">Gross rent</td>'
+        +'<td style="padding:5px 8px;font-weight:600">'+fm(inp.rent)+'/mo</td></tr>'
+        +'<tr><td style="padding:5px 8px;color:#555">Taxes + ins</td>'
+        +'<td style="padding:5px 8px;font-weight:600">'+fm((inp.taxes+inp.ins)/12)+'/mo</td>'
         +'<tr style="background:#f8fafc"><td style="padding:5px 8px;color:#555">HOA/mo</td>'
         +'<td style="padding:5px 8px;font-weight:600">'+fm(inp.hoa)+'</td>'
         +'<td style="padding:5px 8px;color:#555">Mgmt/mo</td>'
