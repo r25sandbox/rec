@@ -1,10 +1,11 @@
 // ric.js — REI Calc external script
-// v5.1  2026-04-19  Fix input visual display on Load: sv() now sets BOTH el.value
-//                   (DOM property) AND el.setAttribute('value', v) (HTML attribute).
-//                   Diagnosis via console: property was set correctly (run() read 3618)
-//                   but attribute stayed at HTML default (input showed 3000). Some browsers
-//                   render the attribute, not the property. Setting both forces visual refresh.
-//                   // Commit: sv() sets both value property and attribute for visual refresh
+// v5.2  2026-04-19  Console screenshot revealed: input DOM .value = 3618 correct, but
+//                   textbox visually showed 3000 (HTML default). Fix sv() to set all three:
+//                   .value (property), .defaultValue (attribute backing), setAttribute('value').
+//                   Also added document-level event delegation as fallback for listeners
+//                   that may have been lost if Carrd rebuilt elements post-init.
+//                   // Commit: sv() triple-set + delegation fallback
+// v5.1  2026-04-19  sv() sets both value property and attribute
 // v5.0  2026-04-19  Clean rewrite matching EEC pattern exactly
 
 (function(){
@@ -120,7 +121,8 @@
       var el=gi(elId);
       if(el&&v!==undefined&&v!==null){
         el.value=v;
-        el.setAttribute('value',v); // force visual refresh — property alone doesn't update display
+        el.defaultValue=v;         // changes property backing the HTML attribute
+        el.setAttribute('value',v); // changes attribute directly
       }
     }
     sv('price',inp.price); sv('down',inp.down); sv('rent',inp.rent);
@@ -366,10 +368,20 @@
 
   // ── Wire + Init ───────────────────────────────────────────────────────────
   function wireInputs(){
+    // Direct listeners (primary)
     ['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt'].forEach(function(id){
       var el=gi(id); if(el) el.addEventListener('input',run);
     });
     var lt=gi('loantype'); if(lt) lt.addEventListener('change',run);
+
+    // Document-level delegation (fallback) — catches events even if Carrd rebuilds elements
+    var inputIds=['price','down','rent','rate','appr','vacancy','taxes','ins','maint','hoa','mgmt'];
+    document.addEventListener('input',function(e){
+      if(e.target&&inputIds.indexOf(e.target.id)>=0) run();
+    });
+    document.addEventListener('change',function(e){
+      if(e.target&&e.target.id==='loantype') run();
+    });
   }
 
   function init(){
