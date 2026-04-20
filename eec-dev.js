@@ -1,5 +1,8 @@
 // eec.js — Equity Extraction Calculator
-// v1.8.9 | 2026-04-20 | Print: download blob directly — no print dialog; user opens+prints at will
+// v1.8.10 | 2026-04-20 | CASH OUT panel: slider-label no "extracted"; slider-cf in header;
+//                         slider-ltv replaces CF in stats row; print opens new tab, no dialog;
+//                         report title "Cash Out" not "Equity Extraction"
+//                         Commit: cash out UX + print open-tab no dialog
 //                        Commit: report download, no auto-print dialog
 //                        gold left-border cards, 3-col alternating input grid, split footer
 //                        Commit: EEC print report matches RIC style
@@ -127,11 +130,15 @@
     var newPmt=calcPmt(newLoan,s.refirate,s.loanType);
     var cf=s.effRent-s.fixedExp-newPmt;
     var ltv80=s.propval*0.80;
-    setTxt('slider-label',fm(extract)+' extracted');
+    setTxt('slider-label',fm(extract));           // header: cash-out amount, no "extracted"
+    setTxt('slider-cf',fms(cf));                  // header: cash flow (color set below)
+    setColor('slider-cf',cf>=0?'#2ecc71':'#e74c3c');
     setTxt('slider-loan',fm(newLoan));
     setTxt('slider-pmt',fm(newPmt));
-    setTxt('slider-cf',fms(cf));
-    setColor('slider-cf',cf>=0?'#2ecc71':'#e74c3c');
+    // LTV in stats row
+    var ltv=s.propval>0?Math.round(newLoan/s.propval*100):0;
+    setTxt('slider-ltv',ltv+'%');
+    setColor('slider-ltv',ltv<=80?'#2ecc71':'#e74c3c');
     var pct=s.maxCashOut>0?Math.min(extract/s.maxCashOut*100,100):0;
     var barEl=gi('slider-bar');
     if(barEl){barEl.style.width=pct+'%';barEl.style.background=cf>=0?'#2ecc71':'#e74c3c';}
@@ -314,7 +321,7 @@
     }
     var dateStr=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
     var html='<!DOCTYPE html><html><head><meta charset="UTF-8">'
-      +'<title>Equity Extraction &#8212; Scenario Comparison</title>'
+      +'<title>Cash Out &#8212; Scenario Comparison</title>'
       +'<style>'
       +'*{box-sizing:border-box;margin:0;padding:0}'
       +'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#fff;color:#0d1b2e;padding:32px;max-width:860px;margin:0 auto}'
@@ -331,7 +338,7 @@
       +'<div class="page-hdr">'
       +'<div><div class="brand">Realty <span>25 AZ</span></div>'
       +'<div class="brand-sub">ALIK LEVIN, BROKER &middot; 480.920.2273 &middot; REALTY25AZ.COM</div></div>'
-      +'<div><div class="page-title">Equity Extraction &#8212; Scenario Comparison</div>'
+      +'<div><div class="page-title">Cash Out &#8212; Scenario Comparison</div>'
       +'<div class="page-date">'+dateStr+'</div></div>'
       +'</div>'
       +rows
@@ -342,11 +349,14 @@
       +'</body></html>';
     var blob=new Blob([html],{type:'text/html'});
     var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');
-    a.href=url;
-    a.download='EEC-Report-'+new Date().toISOString().slice(0,10)+'.html';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function(){URL.revokeObjectURL(url);},10000);
+    var w=window.open(url,'_blank');
+    if(!w){
+      // Popup blocked — fall back to download
+      var a=document.createElement('a');
+      a.href=url; a.download='CashOut-Report-'+new Date().toISOString().slice(0,10)+'.html';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+    setTimeout(function(){URL.revokeObjectURL(url);},60000);
   }
 
   // ── Save card (RIC pattern) ───────────────────────────────────────────────
