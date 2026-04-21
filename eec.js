@@ -1,5 +1,6 @@
 // eec.js — Equity Extraction Calculator
-// v1.8.10 | 2026-04-20 | CASH OUT panel: slider-label no "extracted"; slider-cf in header;
+// v1.8.11 | 2026-04-20 | PDF hero: cash-out equal to CF — two columns, labeled, matching panel
+//                         Commit: PDF cash-out elevated to match CF prominence
 //                         slider-ltv replaces CF in stats row; print opens new tab, no dialog;
 //                         report title "Cash Out" not "Equity Extraction"
 //                         Commit: cash out UX + print open-tab no dialog
@@ -295,9 +296,15 @@
         +'<div style="font-size:17px;font-weight:700;color:#0d1b2e">'+escHtml(s.label)+'</div>'
         +'<div style="font-size:10px;color:#888;margin-top:3px">'+ltLabel+' &middot; Saved '+escHtml(s.savedAt)+ltvStr+'</div>'
         +'</div>'
-        +'<div style="text-align:right;flex-shrink:0">'
+        +'<div style="display:flex;gap:24px;flex-shrink:0;align-items:flex-start">'
+        +'<div style="text-align:right">'
+        +'<div style="font-size:11px;color:#888;margin-bottom:2px">Cash out</div>'
+        +'<div style="font-size:26px;font-weight:700;color:#c5a050">'+fm(dispExtract)+'</div>'
+        +'</div>'
+        +'<div style="text-align:right">'
+        +'<div style="font-size:11px;color:#888;margin-bottom:2px">Cash flow</div>'
         +'<div style="font-size:26px;font-weight:700;color:'+cfCol+'">'+fms(dispCF)+'/mo</div>'
-        +'<div style="font-size:10px;color:#888;margin-top:2px">'+fm(dispExtract)+' extracted</div>'
+        +'</div>'
         +'</div></div>'
         // 3-col input grid
         +'<table style="width:100%;border-collapse:collapse;font-size:12px">'
