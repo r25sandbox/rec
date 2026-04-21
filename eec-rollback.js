@@ -1,5 +1,11 @@
 // eec.js — Equity Extraction Calculator
-// v1.8.7 | 2026-04-19 | Green flash on active row after overwrite — visual save confirmation
+// v1.8.10 | 2026-04-20 | CASH OUT panel: slider-label no "extracted"; slider-cf in header;
+//                         slider-ltv replaces CF in stats row; print opens new tab, no dialog;
+//                         report title "Cash Out" not "Equity Extraction"
+//                         Commit: cash out UX + print open-tab no dialog
+//                        Commit: report download, no auto-print dialog
+//                        gold left-border cards, 3-col alternating input grid, split footer
+//                        Commit: EEC print report matches RIC style
 //                        Commit: overwrite save confirmation flash
 // v1.8.6 | 2026-04-18 | savedLTV in card row and PDF; plain English binding labels
 //                        Commit: fix slider restore on load — remove setTimeout re-run
@@ -124,11 +130,15 @@
     var newPmt=calcPmt(newLoan,s.refirate,s.loanType);
     var cf=s.effRent-s.fixedExp-newPmt;
     var ltv80=s.propval*0.80;
-    setTxt('slider-label',fm(extract)+' extracted');
+    setTxt('slider-label',fm(extract));           // header: cash-out amount, no "extracted"
+    setTxt('slider-cf',fms(cf));                  // header: cash flow (color set below)
+    setColor('slider-cf',cf>=0?'#2ecc71':'#e74c3c');
     setTxt('slider-loan',fm(newLoan));
     setTxt('slider-pmt',fm(newPmt));
-    setTxt('slider-cf',fms(cf));
-    setColor('slider-cf',cf>=0?'#2ecc71':'#e74c3c');
+    // LTV in stats row
+    var ltv=s.propval>0?Math.round(newLoan/s.propval*100):0;
+    setTxt('slider-ltv',ltv+'%');
+    setColor('slider-ltv',ltv<=80?'#2ecc71':'#e74c3c');
     var pct=s.maxCashOut>0?Math.min(extract/s.maxCashOut*100,100):0;
     var barEl=gi('slider-bar');
     if(barEl){barEl.style.width=pct+'%';barEl.style.background=cf>=0?'#2ecc71':'#e74c3c';}
@@ -273,52 +283,79 @@
       var dispCF=s.savedCF!==undefined?s.savedCF:s.newCF;
       var cfCol=dispCF>=0?'#16a34a':'#dc2626';
       var ltLabel=inp.loantype==='30io'?'Interest Only':'30yr Fixed';
-      rows+='<div style="border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:20px;page-break-inside:avoid">'
-        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">'
-        +'<div><h2 style="margin:0;font-size:16px;color:#0d1b2e">'+escHtml(s.label)+'</h2>'
-        +'<p style="margin:3px 0 0;font-size:11px;color:#64748b">Saved '+escHtml(s.savedAt)+' &middot; '+ltLabel+(s.savedLTV!==undefined?' &middot; '+s.savedLTV+'% LTV':'')+'</p></div>'
-        +'<div style="display:flex;gap:20px;flex-shrink:0">'
-        +'<div style="text-align:right;border-right:1px solid #e2e8f0;padding-right:20px">'
-        +'<div style="font-size:22px;font-weight:700;color:#0d1b2e">'+fm(dispExtract)+'</div>'
-        +'<div style="font-size:11px;color:#64748b">extracted</div></div>'
-        +'<div style="text-align:right">'
-        +'<div style="font-size:22px;font-weight:700;color:'+cfCol+'">'+fms(dispCF)+'/mo</div>'
-        +'<div style="font-size:11px;color:#64748b">cash flow</div></div>'
+      var ltvStr=s.savedLTV!==undefined?' &middot; '+s.savedLTV+'% LTV':'';
+      // 3-col input grid rows — alternating background matching RIC
+      var r0='border-bottom:1px solid #e8e5e0';
+      var ra='background:#f8f8f8;'+r0;
+      rows+=''
+        +'<div style="border:1px solid #e2e8f0;border-left:4px solid #c5a050;border-radius:6px;padding:20px 20px 16px;margin-bottom:20px;page-break-inside:avoid">'
+        // Card header: name left, hero metrics right
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">'
+        +'<div>'
+        +'<div style="font-size:17px;font-weight:700;color:#0d1b2e">'+escHtml(s.label)+'</div>'
+        +'<div style="font-size:10px;color:#888;margin-top:3px">'+ltLabel+' &middot; Saved '+escHtml(s.savedAt)+ltvStr+'</div>'
+        +'</div>'
+        +'<div style="text-align:right;flex-shrink:0">'
+        +'<div style="font-size:26px;font-weight:700;color:'+cfCol+'">'+fms(dispCF)+'/mo</div>'
+        +'<div style="font-size:10px;color:#888;margin-top:2px">'+fm(dispExtract)+' extracted</div>'
         +'</div></div>'
+        // 3-col input grid
         +'<table style="width:100%;border-collapse:collapse;font-size:12px">'
-        +'<tr><td style="padding:5px 8px;color:#555;width:35%">Loan balance</td>'
-        +'<td style="padding:5px 8px;font-weight:600">'+fm(inp.balance)+'</td>'
-        +'<td style="padding:5px 8px;color:#555;width:35%">Property value</td>'
-        +'<td style="padding:5px 8px;font-weight:600">'+fm(inp.propval)+'</td></tr>'
-        +'<tr style="background:#f8fafc"><td style="padding:5px 8px;color:#555">Refi rate</td>'
-        +'<td style="padding:5px 8px;font-weight:600">'+inp.refirate+'%</td>'
-        +'<td style="padding:5px 8px;color:#555">Gross rent</td>'
-        +'<td style="padding:5px 8px;font-weight:600">'+fm(inp.rent)+'/mo</td></tr>'
-        +'<tr><td style="padding:5px 8px;color:#555">Taxes + ins</td>'
-        +'<td style="padding:5px 8px;font-weight:600">'+fm((inp.taxes+inp.ins)/12)+'/mo</td>'
-        +'<td style="padding:5px 8px;color:#555">HOA/mo</td>'
-        +'<td style="padding:5px 8px;font-weight:600">'+fm(inp.hoa)+'</td></tr>'
-        +'<tr style="background:#f8fafc"><td style="padding:5px 8px;color:#555">Mgmt/mo</td>'
-        +'<td style="padding:5px 8px;font-weight:600">'+fm(inp.mgmt)+'</td>'
-        +'<td style="padding:5px 8px;color:#555">Maint/yr</td>'
-        +'<td style="padding:5px 8px;font-weight:600">'+fm(inp.maint)+'</td></tr>'
-        +'</table></div>';
+        +'<tr style="'+r0+'">'
+        +'<td style="padding:6px 8px;color:#888;width:17%">Loan balance</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e;width:16%">'+fm(inp.balance)+'</td>'
+        +'<td style="padding:6px 8px;color:#888;width:17%">Property value</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e;width:16%">'+fm(inp.propval)+'</td>'
+        +'<td style="padding:6px 8px;color:#888;width:17%">Refi rate</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+inp.refirate+'%</td>'
+        +'</tr>'
+        +'<tr style="'+ra+'">'
+        +'<td style="padding:6px 8px;color:#888">Gross rent</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(inp.rent)+'/mo</td>'
+        +'<td style="padding:6px 8px;color:#888">Taxes/yr</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(inp.taxes)+'</td>'
+        +'<td style="padding:6px 8px;color:#888">Insur./yr</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(inp.ins)+'</td>'
+        +'</tr>'
+        +'<tr style="'+r0+'">'
+        +'<td style="padding:6px 8px;color:#888">HOA/mo</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(inp.hoa)+'</td>'
+        +'<td style="padding:6px 8px;color:#888">Mgmt/mo</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(inp.mgmt)+'</td>'
+        +'<td style="padding:6px 8px;color:#888">Maint./yr</td><td style="padding:6px 8px;font-weight:600;color:#0d1b2e">'+fm(inp.maint)+'</td>'
+        +'</tr>'
+        +'</table>'
+        +'</div>';
     }
-    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Equity Extraction &#8212; Scenarios</title>'
-      +'<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:800px;margin:0 auto;padding:20px;color:#0d1b2e}'
-      +'.hdr{text-align:center;border-bottom:3px solid #c5a050;padding-bottom:14px;margin-bottom:24px}'
-      +'.hdr h1{font-size:20px;margin:0}.hdr p{font-size:11px;color:#666;margin:4px 0 0}'
-      +'@media print{body{padding:0}}</style></head><body>'
-      +'<div class="hdr"><h1>Equity Extraction &#8212; Scenario Comparison</h1>'
-      +'<p>Realty 25 AZ &middot; '+new Date().toLocaleDateString()+'</p></div>'
+    var dateStr=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8">'
+      +'<title>Cash Out &#8212; Scenario Comparison</title>'
+      +'<style>'
+      +'*{box-sizing:border-box;margin:0;padding:0}'
+      +'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#fff;color:#0d1b2e;padding:32px;max-width:860px;margin:0 auto}'
+      +'.page-hdr{display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;margin-bottom:28px;border-bottom:3px solid #0d1b2e}'
+      +'.brand{font-size:20px;font-weight:700;color:#0d1b2e;letter-spacing:-.01em}'
+      +'.brand span{color:#c5a050}'
+      +'.brand-sub{font-size:10px;color:#888;margin-top:3px;letter-spacing:.04em}'
+      +'.page-title{font-size:13px;font-weight:700;color:#0d1b2e;text-align:right}'
+      +'.page-date{font-size:11px;color:#888;text-align:right;margin-top:3px}'
+      +'.page-ftr{margin-top:28px;padding-top:12px;border-top:1px solid #ddd;display:flex;justify-content:space-between;align-items:center}'
+      +'.page-ftr span{font-size:9px;color:#aaa}'
+      +'@media print{body{padding:16px}@page{margin:14mm}}'
+      +'</style></head><body>'
+      +'<div class="page-hdr">'
+      +'<div><div class="brand">Realty <span>25 AZ</span></div>'
+      +'<div class="brand-sub">ALIK LEVIN, BROKER &middot; 480.920.2273 &middot; REALTY25AZ.COM</div></div>'
+      +'<div><div class="page-title">Cash Out &#8212; Scenario Comparison</div>'
+      +'<div class="page-date">'+dateStr+'</div></div>'
+      +'</div>'
       +rows
-      +'<p style="font-size:9px;color:#999;text-align:center;margin-top:20px">For informational purposes only. Not financial advice. Realty 25 AZ &middot; realty25az.com</p>'
+      +'<div class="page-ftr">'
+      +'<span>Realty 25 AZ &middot; realty25az.com &middot; 480.920.2273</span>'
+      +'<span>For informational purposes only. Not financial or investment advice.</span>'
+      +'</div>'
       +'</body></html>';
     var blob=new Blob([html],{type:'text/html'});
     var url=URL.createObjectURL(blob);
     var w=window.open(url,'_blank');
-    if(w){w.addEventListener('load',function(){w.print();});}
-    else{var a=document.createElement('a');a.href=url;a.download='EEC-Report.html';document.body.appendChild(a);a.click();document.body.removeChild(a);}
+    if(!w){
+      // Popup blocked — fall back to download
+      var a=document.createElement('a');
+      a.href=url; a.download='CashOut-Report-'+new Date().toISOString().slice(0,10)+'.html';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
     setTimeout(function(){URL.revokeObjectURL(url);},60000);
   }
 
